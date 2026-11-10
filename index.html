@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#4fb3ff">
-<meta name="description" content="Zoom Zoom Cars - a friendly car game for kids. Collect stars and steer around cones!">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="Zoom Zoom Cars - a friendly car game for kids. Collect stars, grab nitro and drive through six lands!">
 <title>Zoom Zoom Cars</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%97%3C/text%3E%3C/svg%3E">
 <style>
@@ -20,6 +22,7 @@
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
     touch-action: none;
+    overscroll-behavior: none;
   }
   body {
     display: flex;
@@ -30,16 +33,15 @@
   }
   #stage {
     position: relative;
-    width: min(100vw, calc(100vh * 0.625));
-    width: min(100vw, calc(100dvh * 0.625));
-    aspect-ratio: 400 / 640;
+    width: 400px;
+    height: 640px;
     overflow: hidden;
     font-size: 16px;
-    background: #6b7280;
+    background: #5b6470;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
     cursor: pointer;
   }
-  canvas { display: block; width: 100%; height: 100%; }
+  canvas#game { display: block; width: 100%; height: 100%; }
 
   #hud {
     position: absolute;
@@ -49,15 +51,16 @@
     justify-content: space-between;
     gap: 0.4em;
     padding: 0.5em 0.6em;
+    padding-top: calc(0.5em + env(safe-area-inset-top, 0px));
     pointer-events: none;
   }
   .pill {
     background: rgba(255, 255, 255, 0.92);
     color: #1f2937;
     border-radius: 999px;
-    padding: 0.25em 0.8em;
+    padding: 0.25em 0.7em;
     font-weight: bold;
-    font-size: 1.15em;
+    font-size: 1.1em;
     box-shadow: 0 0.15em 0 rgba(0, 0, 0, 0.2);
     white-space: nowrap;
   }
@@ -76,9 +79,28 @@
     font-family: inherit;
   }
 
+  #banner {
+    position: absolute;
+    top: 17%;
+    left: 50%;
+    transform: translate(-50%, -0.6em) scale(0.8);
+    background: rgba(255, 255, 255, 0.95);
+    color: #1f2937;
+    border-radius: 999px;
+    padding: 0.3em 1em;
+    font-size: 1.5em;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: 0 0.15em 0 rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+  }
+  #banner.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
   .arrow {
     position: absolute;
-    bottom: 1.2%;
+    bottom: calc(1.2% + env(safe-area-inset-bottom, 0px));
     width: 15%;
     aspect-ratio: 1;
     border-radius: 50%;
@@ -100,22 +122,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.9em;
-    padding: 1.5em;
+    gap: 0.65em;
+    padding: 1.2em;
     text-align: center;
-    background: rgba(20, 60, 110, 0.55);
+    background: rgba(20, 60, 110, 0.6);
     color: #fff;
     cursor: default;
   }
   #overlay h1 {
     margin: 0;
-    font-size: 2.6em;
+    font-size: 2.3em;
     line-height: 1.1;
     text-shadow: 0 0.08em 0 rgba(0, 0, 0, 0.3);
   }
-  #overlay p { margin: 0; font-size: 1.25em; line-height: 1.35; }
-  #scoreLine { font-size: 1.6em !important; font-weight: bold; }
-  #hint { font-size: 1em !important; opacity: 0.9; }
+  #overlay p { margin: 0; font-size: 1.15em; line-height: 1.3; }
+  #scoreLine { font-size: 1.5em !important; font-weight: bold; }
+  #trait { font-size: 1em !important; font-weight: bold; color: #ffe98a; min-height: 1.3em; }
+  #hint { font-size: 0.95em !important; opacity: 0.9; }
   #playBtn {
     border: none;
     border-radius: 999px;
@@ -123,17 +146,27 @@
     color: #1f2937;
     font-family: inherit;
     font-weight: bold;
-    font-size: 1.9em;
-    padding: 0.45em 1.5em;
+    font-size: 1.8em;
+    padding: 0.4em 1.4em;
     cursor: pointer;
     box-shadow: 0 0.22em 0 #c99a00;
   }
   #playBtn:active { transform: translateY(0.12em); box-shadow: 0 0.1em 0 #c99a00; }
-  #colors { display: flex; gap: 0.8em; }
+  #vehicles, #colors { display: flex; gap: 0.6em; justify-content: center; }
+  .veh {
+    width: 4.2em; height: 6.2em;
+    border-radius: 0.9em;
+    border: 0.2em solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.16);
+    padding: 0;
+    cursor: pointer;
+  }
+  .veh canvas { display: block; width: 100%; height: 100%; }
+  .veh.on { border-color: #fff; background: rgba(255, 255, 255, 0.4); transform: scale(1.08); }
   .swatch {
-    width: 3em; height: 3em;
+    width: 2.6em; height: 2.6em;
     border-radius: 50%;
-    border: 0.25em solid rgba(255, 255, 255, 0.5);
+    border: 0.22em solid rgba(255, 255, 255, 0.5);
     cursor: pointer;
     padding: 0;
   }
@@ -155,14 +188,17 @@
     </div>
   </div>
 
+  <div id="banner"></div>
+
   <div class="arrow" id="arrowL">◀</div>
   <div class="arrow" id="arrowR">▶</div>
 
   <div id="overlay">
     <h1 id="title">🚗 Zoom Zoom Cars</h1>
-    <p id="message">Collect the ⭐ stars!<br>Steer around cones and slow cars.</p>
+    <p id="message">Collect ⭐ stars and power-ups!<br>Steer around cones and traffic.</p>
     <p id="scoreLine" class="hidden"></p>
-    <p id="pickLabel">Pick your car:</p>
+    <div id="vehicles"></div>
+    <p id="trait"></p>
     <div id="colors"></div>
     <button id="playBtn">▶ Play</button>
     <p id="hint">Tap the left or right side to steer<br>or use the ← → arrow keys</p>
@@ -174,11 +210,57 @@
   'use strict';
 
   // ---------- Constants ----------
-  var W = 400, H = 640;
+  var W = 400, H = 640;            // H changes with the screen shape
   var ROAD_X = 50, LANE_W = 100;
+  var ZONE_LEN = 9000;             // road length of each land, in pixels
+  var SCENERY_COUNT = 16, SCENERY_GAP = 72;
   var CAR_COLORS = ['#e53935', '#1e88e5', '#43a047', '#8e24aa'];
-  var TRAFFIC_COLORS = ['#fb8c00', '#00acc1', '#f06292', '#7cb342', '#fdd835'];
-  var MAX_HEARTS = 3;
+  var TRAFFIC_COLORS = ['#fb8c00', '#00acc1', '#f06292', '#7cb342', '#5c6bc0', '#26a69a'];
+
+  // Sizes of every vehicle (top-down, nose pointing up)
+  var VEH = {
+    car:     { w: 54, h: 92 },
+    taxi:    { w: 54, h: 92 },
+    racer:   { w: 54, h: 98 },
+    pickup:  { w: 56, h: 100 },
+    monster: { w: 60, h: 96 },
+    van:     { w: 56, h: 104 },
+    truck:   { w: 58, h: 136 },
+    bus:     { w: 58, h: 136 }
+  };
+
+  // Vehicles the player can choose, each with one special skill
+  var PLAYER_VEHICLES = [
+    { kind: 'car',     name: 'City Car',      trait: '🧲 Magnets last longer' },
+    { kind: 'racer',   name: 'Racing Car',    trait: '⚡ Nitro lasts longer' },
+    { kind: 'pickup',  name: 'Pickup Truck',  trait: '❤️ One extra heart' },
+    { kind: 'monster', name: 'Monster Truck', trait: '💥 Squashes cones' }
+  ];
+  var TRAFFIC_KINDS = ['car', 'car', 'taxi', 'racer', 'pickup', 'van', 'truck', 'bus'];
+
+  // The lands you drive through, in order (then they repeat)
+  var ZONES = [
+    { name: '🌳 Sunny Meadow', left: '#5cc24a', right: '#5cc24a', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff5a5a',
+      sceneL: ['tree', 'tree', 'bush', 'flowers'], sceneR: ['tree', 'tree', 'bush', 'flowers'] },
+    { name: '🌵 Desert Dunes', left: '#e8c170', right: '#e8c170', road: '#6b6257', dash: '#fff3d6', kerbA: '#ffffff', kerbB: '#e07b39',
+      sceneL: ['cactus', 'cactus', 'rock'], sceneR: ['cactus', 'rock', 'cactus'] },
+    { name: '❄️ Snowy Peaks', left: '#eef6fb', right: '#eef6fb', road: '#6a7482', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#4aa3df',
+      sceneL: ['pine', 'pine', 'snowman'], sceneR: ['pine', 'snowman', 'pine'] },
+    { name: '🏖️ Sunny Beach', left: '#f4dc9a', right: '#39b6e6', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff9f1c',
+      sceneL: ['palm', 'palm', 'parasol'], sceneR: ['boat', 'buoy', 'wave', 'wave'] },
+    { name: '🌙 Night City', left: '#27304a', right: '#27304a', road: '#3a4152', dash: '#ffe98a', kerbA: '#cfd6e6', kerbB: '#7b61ff', dark: true,
+      sceneL: ['building', 'building', 'lamp'], sceneR: ['building', 'lamp', 'building'] },
+    { name: '🚀 Rainbow Space', left: '#1b1140', right: '#1b1140', road: '#2b2060', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#ff5ad1', dark: true, rainbow: true,
+      sceneL: ['planet', 'twinkle', 'twinkle'], sceneR: ['twinkle', 'planet', 'twinkle'] }
+  ];
+
+  var POWER_INFO = {
+    nitro:  { color: '#ff6b00', label: '⚡ Nitro!' },
+    shield: { color: '#29b6f6', label: '🛡️ Shield!' },
+    magnet: { color: '#ab47bc', label: '🧲 Star magnet!' },
+    dbl:    { color: '#43a047', label: '✨ Double stars!' },
+    heart:  { color: '#ff5c8a', label: '❤️ Extra heart!' }
+  };
 
   // ---------- Elements ----------
   var stage = document.getElementById('stage');
@@ -186,11 +268,13 @@
   var ctx = canvas.getContext('2d');
   var elScore = document.getElementById('score');
   var elHearts = document.getElementById('hearts');
+  var elBanner = document.getElementById('banner');
   var elOverlay = document.getElementById('overlay');
   var elTitle = document.getElementById('title');
   var elMessage = document.getElementById('message');
   var elScoreLine = document.getElementById('scoreLine');
-  var elPickLabel = document.getElementById('pickLabel');
+  var elVehicles = document.getElementById('vehicles');
+  var elTrait = document.getElementById('trait');
   var elColors = document.getElementById('colors');
   var elHint = document.getElementById('hint');
   var playBtn = document.getElementById('playBtn');
@@ -209,24 +293,33 @@
   function save(key, value) {
     try { window.localStorage.setItem(key, String(value)); } catch (e) { /* ignore */ }
   }
+  function loadIndex(key, count) {
+    var n = parseInt(load(key, '0'), 10) || 0;
+    return (n < 0 || n >= count) ? 0 : n;
+  }
 
   // ---------- State ----------
   var state = 'menu'; // menu | playing | paused | over
   var best = parseInt(load('zzc_best', '0'), 10) || 0;
   var muted = load('zzc_muted', '0') === '1';
-  var colorIndex = parseInt(load('zzc_color', '0'), 10) || 0;
-  if (colorIndex < 0 || colorIndex >= CAR_COLORS.length) colorIndex = 0;
+  var colorIndex = loadIndex('zzc_color', CAR_COLORS.length);
+  var vehicleIndex = loadIndex('zzc_vehicle', PLAYER_VEHICLES.length);
 
-  var player = { lane: 1, x: laneX(1), y: H - 120, w: 54, h: 92 };
+  var player = { kind: 'car', lane: 1, x: laneX(1), y: H - 130, w: 54, h: 92 };
   var entities = [];
   var particles = [];
-  var trees = [];
-  var elapsed = 0, distance = 0, stars = 0, score = 0, hearts = MAX_HEARTS;
-  var speed = 220, roadOffset = 0, rowTimer = 0, safeLane = 1;
+  var scenery = [];
+  var flakes = [];
+  var elapsed = 0, distance = 0, bonus = 0, score = 0;
+  var hearts = 3, maxHearts = 3;
+  var speed = 280, speedMul = 1, roadOffset = 0, rowTimer = 0, safeLane = 1, rowsSincePower = 0;
   var invincible = 0, shake = 0, overAt = 0;
+  var nitro = 0, magnet = 0, dbl = 0, shield = false;
+  var nitroDur = 3, magnetDur = 7, dblDur = 8, squash = false;
+  var zoneBelow = 0, zoneAbove = 0, zoneNow = 0, transitioning = false, announced = true, boundaryY = 0, nextZoneAt = ZONE_LEN, zonesSeen = 1;
   var scaleX = 1, scaleY = 1;
-  var lastTime = 0;
-  var shownScore = -1, shownHearts = -1;
+  var lastTime = 0, bannerTimer = 0;
+  var shownScore = -1, shownHearts = -1, shownMax = -1;
 
   function laneX(i) { return ROAD_X + LANE_W * i + LANE_W / 2; }
   function rand(a, b) { return a + Math.random() * (b - a); }
@@ -262,56 +355,144 @@
   function sndMove() { beep(520, 0.05, 'sine', 0.05); }
   function sndStart() { beep(523, 0.1, 'square', 0.06); beep(659, 0.1, 'square', 0.06, null, 0.1); beep(784, 0.18, 'square', 0.06, null, 0.2); }
   function sndOver() { beep(659, 0.15, 'sine', 0.12); beep(523, 0.15, 'sine', 0.12, null, 0.15); beep(784, 0.3, 'sine', 0.12, null, 0.3); }
+  function sndNitro() { beep(180, 0.5, 'sawtooth', 0.08, 900); }
+  function sndPower() { beep(523, 0.09, 'sine', 0.12); beep(784, 0.09, 'sine', 0.12, null, 0.08); beep(1047, 0.16, 'sine', 0.12, null, 0.16); }
+  function sndWhoosh() { beep(700, 0.18, 'triangle', 0.1, 250); }
+  function sndPop() { beep(400, 0.12, 'square', 0.07, 900); }
+  function sndZone() { beep(523, 0.12, 'triangle', 0.12); beep(659, 0.12, 'triangle', 0.12, null, 0.12); beep(784, 0.12, 'triangle', 0.12, null, 0.24); beep(1047, 0.3, 'triangle', 0.12, null, 0.36); }
+  function buzz(ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* optional */ }
+  }
+
+  // ---------- Banner ----------
+  function showBanner(text) {
+    elBanner.textContent = text;
+    elBanner.classList.add('show');
+    window.clearTimeout(bannerTimer);
+    bannerTimer = window.setTimeout(function () { elBanner.classList.remove('show'); }, 1700);
+  }
 
   // ---------- Setup ----------
-  function initTrees() {
-    trees = [];
-    for (var i = 0; i < 10; i++) {
-      trees.push({
-        x: (i % 2 === 0) ? rand(16, 30) : rand(W - 30, W - 16),
-        y: i * 72 + rand(-15, 15),
-        r: rand(13, 18)
+  function sceneType(zoneIndex, left) {
+    var z = ZONES[zoneIndex];
+    return pick(left ? z.sceneL : z.sceneR);
+  }
+
+  function initScenery() {
+    scenery = [];
+    for (var i = 0; i < SCENERY_COUNT; i++) {
+      var left = i % 2 === 0;
+      scenery.push({
+        left: left,
+        x: left ? rand(20, 30) : rand(W - 30, W - 20),
+        y: i * SCENERY_GAP - 120 + rand(-12, 12),
+        type: sceneType(0, left),
+        s: Math.random()
       });
     }
+    flakes = [];
+    for (var k = 0; k < 45; k++) flakes.push({ x: rand(0, W), y: rand(0, 900), r: rand(1.5, 3.5), v: rand(40, 110) });
+  }
+
+  function applyVehicle() {
+    var v = PLAYER_VEHICLES[vehicleIndex];
+    player.kind = v.kind;
+    player.w = VEH[v.kind].w;
+    player.h = VEH[v.kind].h;
+    maxHearts = v.kind === 'pickup' ? 4 : 3;
+    nitroDur = v.kind === 'racer' ? 4.5 : 3;
+    magnetDur = v.kind === 'car' ? 11 : 7;
+    squash = v.kind === 'monster';
   }
 
   function resetGame() {
+    applyVehicle();
     entities = [];
     particles = [];
-    elapsed = 0; distance = 0; stars = 0; score = 0; hearts = MAX_HEARTS;
-    speed = 220; rowTimer = 200; safeLane = 1;
+    elapsed = 0; distance = 0; bonus = 0; score = 0; hearts = maxHearts;
+    speed = 280; speedMul = 1; rowTimer = 220; safeLane = 1; rowsSincePower = 3;
     invincible = 0; shake = 0;
+    nitro = 0; magnet = 0; dbl = 0; shield = false;
+    zoneBelow = 0; zoneAbove = 0; zoneNow = 0; transitioning = false; announced = true;
+    nextZoneAt = ZONE_LEN; zonesSeen = 1;
     player.lane = 1;
     player.x = laneX(1);
+    initScenery();
     updateHud(true);
   }
 
-  function buildSwatches() {
-    CAR_COLORS.forEach(function (c, i) {
+  function drawThumbs() {
+    var buttons = elVehicles.children;
+    for (var i = 0; i < buttons.length; i++) {
+      var cv = buttons[i].firstChild;
+      var c = cv.getContext('2d');
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, cv.width, cv.height);
+      c.setTransform(1.15, 0, 0, 1.15, cv.width / 2, cv.height / 2);
+      drawVehicle(c, PLAYER_VEHICLES[i].kind, CAR_COLORS[colorIndex], true);
+    }
+  }
+
+  function showTrait() {
+    var v = PLAYER_VEHICLES[vehicleIndex];
+    elTrait.textContent = v.name + ': ' + v.trait;
+  }
+
+  function buildPickers() {
+    PLAYER_VEHICLES.forEach(function (v, i) {
+      var b = document.createElement('button');
+      b.className = 'veh' + (i === vehicleIndex ? ' on' : '');
+      b.setAttribute('aria-label', v.name);
+      var cv = document.createElement('canvas');
+      cv.width = 96; cv.height = 142;
+      b.appendChild(cv);
+      b.addEventListener('click', function () {
+        vehicleIndex = i;
+        save('zzc_vehicle', i);
+        var all = elVehicles.children;
+        for (var k = 0; k < all.length; k++) all[k].classList.toggle('on', k === i);
+        showTrait();
+        applyVehicle();
+        beep(660, 0.08, 'sine', 0.08);
+      });
+      elVehicles.appendChild(b);
+    });
+    CAR_COLORS.forEach(function (col, i) {
       var b = document.createElement('button');
       b.className = 'swatch' + (i === colorIndex ? ' on' : '');
-      b.style.background = c;
-      b.setAttribute('aria-label', 'Car colour ' + (i + 1));
+      b.style.background = col;
+      b.setAttribute('aria-label', 'Colour ' + (i + 1));
       b.addEventListener('click', function () {
         colorIndex = i;
         save('zzc_color', i);
         var all = elColors.children;
         for (var k = 0; k < all.length; k++) all[k].classList.toggle('on', k === i);
+        drawThumbs();
         beep(660, 0.08, 'sine', 0.08);
       });
       elColors.appendChild(b);
     });
+    drawThumbs();
+    showTrait();
   }
 
   function resize() {
-    var r = stage.getBoundingClientRect();
-    if (r.width < 1 || r.height < 1) return;
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    if (vw < 1 || vh < 1) return;
+    // Fill tall phone screens, but never get wider than a 400:640 portrait shape.
+    var w = Math.min(vw, vh * 0.625);
+    var h = Math.min(vh, w * 2.3);
+    stage.style.width = w + 'px';
+    stage.style.height = h + 'px';
+    stage.style.fontSize = (w / 25) + 'px';
+    H = W * h / w;
+    player.y = H - 130;
     var dpr = Math.min(window.devicePixelRatio || 1, 3);
-    canvas.width = Math.max(1, Math.round(r.width * dpr));
-    canvas.height = Math.max(1, Math.round(r.height * dpr));
+    canvas.width = Math.max(1, Math.round(w * dpr));
+    canvas.height = Math.max(1, Math.round(h * dpr));
     scaleX = canvas.width / W;
     scaleY = canvas.height / H;
-    stage.style.fontSize = (r.width / 25) + 'px';
     draw();
   }
 
@@ -319,14 +500,15 @@
   function showOverlay(kind) {
     elOverlay.classList.remove('hidden');
     var showPicker = kind !== 'paused';
-    elPickLabel.classList.toggle('hidden', !showPicker);
+    elVehicles.classList.toggle('hidden', !showPicker);
+    elTrait.classList.toggle('hidden', !showPicker);
     elColors.classList.toggle('hidden', !showPicker);
     elHint.classList.toggle('hidden', kind !== 'menu');
     elScoreLine.classList.toggle('hidden', kind !== 'over');
     elMessage.classList.toggle('hidden', kind === 'paused');
     if (kind === 'menu') {
       elTitle.textContent = '🚗 Zoom Zoom Cars';
-      elMessage.innerHTML = 'Collect the ⭐ stars!<br>Steer around cones and slow cars.';
+      elMessage.innerHTML = 'Collect ⭐ stars and power-ups!<br>Steer around cones and traffic.';
       playBtn.textContent = '▶ Play';
     } else if (kind === 'paused') {
       elTitle.textContent = '⏸ Paused';
@@ -334,10 +516,12 @@
     } else {
       var isBest = score > 0 && score >= best;
       elTitle.textContent = '🏁 Great driving!';
-      elMessage.textContent = isBest ? '🎉 New best score! 🎉' : 'Best score: ' + best;
       elScoreLine.textContent = 'You scored ' + score + ' ⭐';
+      elMessage.textContent = (isBest ? '🎉 New best score! 🎉' : 'Best score: ' + best) +
+        ' · Lands visited: ' + zonesSeen;
       playBtn.textContent = '▶ Play again';
     }
+    elBanner.classList.remove('show');
     arrowL.classList.add('hidden');
     arrowR.classList.add('hidden');
     pauseBtn.classList.add('hidden');
@@ -355,6 +539,7 @@
     state = 'playing';
     hideOverlay();
     sndStart();
+    showBanner(ZONES[0].name);
   }
 
   function pauseGame() {
@@ -391,10 +576,11 @@
       shownScore = score;
       elScore.textContent = '⭐ ' + score;
     }
-    if (force || hearts !== shownHearts) {
+    if (force || hearts !== shownHearts || maxHearts !== shownMax) {
       shownHearts = hearts;
+      shownMax = maxHearts;
       var s = '';
-      for (var i = 0; i < MAX_HEARTS; i++) s += i < hearts ? '❤️' : '🤍';
+      for (var i = 0; i < maxHearts; i++) s += i < hearts ? '❤️' : '🤍';
       elHearts.textContent = s;
     }
   }
@@ -417,7 +603,7 @@
     else if (k === ' ' || k === 'Enter') {
       if (e.repeat) { e.preventDefault(); return; }
       if (state !== 'playing') {
-        // Let a focused colour swatch or icon button handle its own click.
+        // Let a focused picker or icon button handle its own click.
         var t = e.target;
         if (t && t !== playBtn && t.tagName === 'BUTTON') return;
         pressPlay();
@@ -439,6 +625,8 @@
 
   // Stop the page from scrolling / zooming while playing on phones.
   document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  document.addEventListener('dblclick', function (e) { e.preventDefault(); });
   document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
   playBtn.addEventListener('click', function () { pressPlay(); playBtn.blur(); });
@@ -456,7 +644,7 @@
   });
   window.addEventListener('blur', pauseGame);
   window.addEventListener('resize', resize);
-  window.addEventListener('orientationchange', resize);
+  window.addEventListener('orientationchange', function () { window.setTimeout(resize, 200); });
 
   // ---------- Game logic ----------
   function spawnRow() {
@@ -473,17 +661,29 @@
     }
 
     blocked.forEach(function (lane) {
-      if (Math.random() < 0.5) {
-        entities.push({ type: 'car', lane: lane, x: laneX(lane), y: -70, w: 54, h: 92, color: pick(TRAFFIC_COLORS) });
+      if (Math.random() < 0.3) {
+        entities.push({ type: 'cone', lane: lane, x: laneX(lane), y: -90, w: 44, h: 44 });
       } else {
-        entities.push({ type: 'cone', lane: lane, x: laneX(lane), y: -70, w: 44, h: 44 });
+        var kind = pick(TRAFFIC_KINDS);
+        entities.push({ type: 'veh', kind: kind, lane: lane, x: laneX(lane), y: -90,
+          w: VEH[kind].w, h: VEH[kind].h, color: pick(TRAFFIC_COLORS), rot: 0 });
       }
     });
 
-    if (Math.random() < 0.75) {
-      var free = [0, 1, 2].filter(function (l) { return blocked.indexOf(l) === -1; });
-      var sl = pick(free);
-      entities.push({ type: 'star', lane: sl, x: laneX(sl), y: -70, w: 40, h: 40 });
+    var free = [0, 1, 2].filter(function (l) { return blocked.indexOf(l) === -1; });
+    var lane = pick(free);
+    rowsSincePower++;
+    if (rowsSincePower >= 6 && Math.random() < 0.4) {
+      rowsSincePower = 0;
+      var ptype = pick(['nitro', 'nitro', 'nitro', 'shield', 'shield', 'magnet', 'magnet', 'dbl', 'dbl', 'heart', 'heart']);
+      if (ptype === 'heart' && hearts >= maxHearts) ptype = 'nitro';
+      if (ptype === 'shield' && shield) ptype = 'magnet';
+      entities.push({ type: 'power', ptype: ptype, lane: lane, x: laneX(lane), y: -90, w: 44, h: 44 });
+    } else if (Math.random() < 0.8) {
+      var count = Math.random() < 0.25 ? 3 : 1; // sometimes a little trail of stars
+      for (var i = 0; i < count; i++) {
+        entities.push({ type: 'star', lane: lane, x: laneX(lane), y: -90 - i * 70, w: 40, h: 40 });
+      }
     }
   }
 
@@ -494,52 +694,164 @@
     }
   }
 
+  function fling(e) {
+    e.fling = true;
+    var dir = e.lane === 0 ? -1 : (e.lane === 2 ? 1 : (Math.random() < 0.5 ? -1 : 1));
+    e.vx = dir * rand(380, 520);
+    e.spin = dir * rand(5, 9);
+    e.rot = e.rot || 0;
+  }
+
+  function applyPower(ptype) {
+    showBanner(POWER_INFO[ptype].label);
+    if (ptype === 'nitro') { nitro = nitroDur; sndNitro(); return; }
+    sndPower();
+    if (ptype === 'shield') shield = true;
+    else if (ptype === 'magnet') magnet = magnetDur;
+    else if (ptype === 'dbl') dbl = dblDur;
+    else if (ptype === 'heart') {
+      if (hearts < maxHearts) hearts++; else bonus += 25;
+    }
+  }
+
   function scrollScenery(dy) {
     roadOffset = (roadOffset + dy) % 80;
-    for (var i = 0; i < trees.length; i++) {
-      trees[i].y += dy;
-      if (trees[i].y > H + 30) trees[i].y -= 720;
+    var wrap = SCENERY_COUNT * SCENERY_GAP;
+    for (var i = 0; i < scenery.length; i++) {
+      var s = scenery[i];
+      s.y += dy;
+      if (s.y > H + 50) {
+        s.y -= wrap;
+        while (s.y > -40) s.y -= SCENERY_GAP; // always re-enter from above the screen
+        s.type = sceneType(zoneAbove, s.left);
+        s.s = Math.random();
+      }
+    }
+  }
+
+  function updateZones(dy) {
+    if (!transitioning && distance >= nextZoneAt) {
+      transitioning = true;
+      announced = false;
+      nextZoneAt += ZONE_LEN;
+      zoneAbove = (zoneBelow + 1) % ZONES.length;
+      boundaryY = -30;
+      // Anything still waiting above the screen belongs to the new land.
+      for (var i = 0; i < scenery.length; i++) {
+        if (scenery[i].y < boundaryY) scenery[i].type = sceneType(zoneAbove, scenery[i].left);
+      }
+    }
+    if (transitioning) {
+      boundaryY += dy;
+      if (!announced && boundaryY >= player.y) {
+        announced = true;
+        zoneNow = zoneAbove;
+        zonesSeen++;
+        bonus += 50;
+        showBanner(ZONES[zoneNow].name);
+        sndZone();
+      }
+      if (boundaryY > H + 40) {
+        transitioning = false;
+        zoneBelow = zoneAbove;
+      }
     }
   }
 
   function update(dt) {
     elapsed += dt;
-    speed = 220 + Math.min(240, elapsed * 4);
+    var base = 280 + Math.min(280, elapsed * 5);
+    speedMul += ((nitro > 0 ? 1.6 : 1) - speedMul) * Math.min(1, dt * 5);
+    speed = base * speedMul;
     var dy = speed * dt;
     distance += dy;
     scrollScenery(dy);
+    updateZones(dy);
 
     rowTimer -= dy;
     if (rowTimer <= 0) {
       spawnRow();
-      rowTimer += 260 + (speed - 220) * 0.6;
+      rowTimer += 360 + (base - 280) * 0.6;
     }
 
     player.x += (laneX(player.lane) - player.x) * Math.min(1, dt * 16);
     if (invincible > 0) invincible = Math.max(0, invincible - dt);
     if (shake > 0) shake = Math.max(0, shake - dt);
+    if (magnet > 0) magnet = Math.max(0, magnet - dt);
+    if (dbl > 0) dbl = Math.max(0, dbl - dt);
+    if (nitro > 0) {
+      nitro = Math.max(0, nitro - dt);
+      if (nitro === 0) invincible = Math.max(invincible, 1.2); // a moment to settle after the boost
+      if (Math.random() < dt * 40) {
+        particles.push({ x: player.x + rand(-10, 10), y: player.y + player.h / 2 + 8, vx: rand(-30, 30), vy: rand(120, 260),
+          life: 0.35, max: 0.35, color: Math.random() < 0.5 ? '#ffd21f' : '#ff7a00', r: rand(3, 6) });
+      }
+    }
 
     for (var i = entities.length - 1; i >= 0; i--) {
       var e = entities[i];
       e.y += dy;
+
+      if (e.fling) {
+        e.x += e.vx * dt;
+        e.rot += e.spin * dt;
+        if (e.x < -90 || e.x > W + 90 || e.y > H + 110) entities.splice(i, 1);
+        continue;
+      }
+
+      if (e.type === 'star' && magnet > 0 && e.y > player.y - 320 && e.y < player.y + 80) {
+        e.x += (player.x - e.x) * Math.min(1, dt * 7);
+        e.y += (player.y - e.y) * Math.min(1, dt * 2.5);
+      }
+
       var hit = Math.abs(e.x - player.x) < (e.w + player.w) / 2 - 8 &&
                 Math.abs(e.y - player.y) < (e.h + player.h) / 2 - 8;
       if (hit) {
         if (e.type === 'star') {
-          stars++;
+          bonus += dbl > 0 ? 20 : 10;
           burst(e.x, e.y, '#ffd21f', 10);
           sndStar();
           entities.splice(i, 1);
           continue;
-        } else if (invincible <= 0) {
+        }
+        if (e.type === 'power') {
+          burst(e.x, e.y, POWER_INFO[e.ptype].color, 14);
+          applyPower(e.ptype);
+          entities.splice(i, 1);
+          continue;
+        }
+        // Obstacles: traffic and cones
+        if (nitro > 0) {
+          fling(e);
+          bonus += 5;
+          sndWhoosh();
+          continue;
+        }
+        if (e.type === 'cone' && squash) {
+          burst(e.x, e.y, '#ff7a00', 12);
+          bonus += 5;
+          sndPop();
+          entities.splice(i, 1);
+          continue;
+        }
+        if (invincible <= 0) {
+          if (shield) {
+            shield = false;
+            invincible = 1;
+            fling(e);
+            burst(player.x, player.y, '#8fdcff', 16);
+            sndPop();
+            continue;
+          }
           hearts--;
           invincible = 1.6;
           shake = 0.3;
           burst(e.x, e.y, '#ffffff', 12);
           sndBump();
+          buzz(60);
           entities.splice(i, 1);
           if (hearts <= 0) {
-            score = stars * 10 + Math.floor(distance / 60);
+            score = bonus + Math.floor(distance / 60);
             updateHud(false);
             endGame();
             return;
@@ -547,7 +859,7 @@
           continue;
         }
       }
-      if (e.y > H + 80) entities.splice(i, 1);
+      if (e.y > H + 110) entities.splice(i, 1);
     }
 
     for (var j = particles.length - 1; j >= 0; j--) {
@@ -558,75 +870,177 @@
       p.y += p.vy * dt + dy * 0.5;
     }
 
-    score = stars * 10 + Math.floor(distance / 60);
+    for (var f = 0; f < flakes.length; f++) {
+      flakes[f].y += (flakes[f].v + dy / dt * 0.3) * dt;
+      if (flakes[f].y > H + 5) { flakes[f].y = -5; flakes[f].x = rand(0, W); }
+    }
+
+    score = bonus + Math.floor(distance / 60);
     updateHud(false);
   }
 
-  // ---------- Drawing ----------
-  function rr(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
+  // ---------- Drawing helpers ----------
+  function rr(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
   }
+  function fillRR(c, color, x, y, w, h, r) { c.fillStyle = color; rr(c, x, y, w, h, r); c.fill(); }
+  function disc(c, color, x, y, r) { c.fillStyle = color; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); }
+  function wheelPair(c, cx, y, ww, wh) {
+    fillRR(c, '#1f2937', -cx - ww / 2, y, ww, wh, 4);
+    fillRR(c, '#1f2937', cx - ww / 2, y, ww, wh, 4);
+  }
+  function outline(c) { c.lineWidth = 2; c.strokeStyle = 'rgba(0,0,0,0.25)'; c.stroke(); }
+  function carLights(c, w, h, bright) {
+    c.fillStyle = bright ? '#fff59d' : '#ffe0b2';
+    rr(c, -w / 2 + 6, -h / 2 + 3, 12, 7, 3); c.fill();
+    rr(c, w / 2 - 18, -h / 2 + 3, 12, 7, 3); c.fill();
+    c.fillStyle = '#ff5252';
+    rr(c, -w / 2 + 6, h / 2 - 9, 11, 5, 2); c.fill();
+    rr(c, w / 2 - 17, h / 2 - 9, 11, 5, 2); c.fill();
+  }
+  var GLASS = '#cfefff';
 
-  function drawCar(x, y, w, h, color, angle, lights) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    // shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-    rr(-w / 2 + 4, -h / 2 + 6, w, h, 12); ctx.fill();
-    // wheels
-    ctx.fillStyle = '#1f2937';
-    rr(-w / 2 - 4, -h / 2 + 12, 10, 22, 4); ctx.fill();
-    rr(w / 2 - 6, -h / 2 + 12, 10, 22, 4); ctx.fill();
-    rr(-w / 2 - 4, h / 2 - 34, 10, 22, 4); ctx.fill();
-    rr(w / 2 - 6, h / 2 - 34, 10, 22, 4); ctx.fill();
-    // body
-    ctx.fillStyle = color;
-    rr(-w / 2, -h / 2, w, h, 13); ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.stroke();
-    // windscreen and rear window
-    ctx.fillStyle = '#cfefff';
-    rr(-w / 2 + 8, -h / 2 + 20, w - 16, 18, 6); ctx.fill();
-    rr(-w / 2 + 10, h / 2 - 26, w - 20, 12, 5); ctx.fill();
-    // roof shine
-    ctx.fillStyle = 'rgba(255,255,255,0.22)';
-    rr(-w / 2 + 10, -h / 2 + 42, w - 20, 20, 6); ctx.fill();
-    // lights
-    ctx.fillStyle = lights ? '#fff59d' : '#ffe0b2';
-    rr(-w / 2 + 6, -h / 2 + 3, 12, 7, 3); ctx.fill();
-    rr(w / 2 - 18, -h / 2 + 3, 12, 7, 3); ctx.fill();
-    ctx.fillStyle = '#ff5252';
-    rr(-w / 2 + 6, h / 2 - 9, 11, 5, 2); ctx.fill();
-    rr(w / 2 - 17, h / 2 - 9, 11, 5, 2); ctx.fill();
-    ctx.restore();
+  // ---------- Vehicles (drawn around 0,0, nose pointing up) ----------
+  function drawVehicle(c, kind, color, bright) {
+    var w = VEH[kind].w, h = VEH[kind].h, i;
+    var top = -h / 2, bot = h / 2;
+
+    if (kind === 'racer') {
+      fillRR(c, 'rgba(0,0,0,0.2)', -14, top + 10, 36, h - 8, 10);
+      wheelPair(c, w / 2 - 6, top + 16, 13, 24);
+      wheelPair(c, w / 2 - 7, bot - 38, 15, 28);
+      fillRR(c, '#1f2937', -w / 2 + 1, top, w - 2, 9, 3);          // front wing
+      fillRR(c, '#1f2937', -w / 2 + 3, bot - 11, w - 6, 11, 3);    // rear wing
+      fillRR(c, color, -19, -8, 38, 36, 9); outline(c);            // side pods
+      fillRR(c, color, -11, top + 4, 22, h - 14, 10); outline(c);  // long nose and body
+      fillRR(c, '#ffffff', -2.5, top + 8, 5, 30, 2);               // racing stripe
+      fillRR(c, '#1f2937', -9, -6, 18, 26, 8);                     // cockpit
+      disc(c, '#ffd21f', 0, 6, 7);                                 // helmet
+      fillRR(c, '#1f2937', -5, 1, 10, 4, 2);
+      return;
+    }
+
+    fillRR(c, 'rgba(0,0,0,0.2)', -w / 2 + 4, top + 6, w, h, 12);
+
+    if (kind === 'car' || kind === 'taxi') {
+      var col = kind === 'taxi' ? '#ffcc00' : color;
+      wheelPair(c, w / 2 - 1, top + 12, 10, 22);
+      wheelPair(c, w / 2 - 1, bot - 34, 10, 22);
+      fillRR(c, col, -w / 2, top, w, h, 13); outline(c);
+      fillRR(c, GLASS, -w / 2 + 8, top + 20, w - 16, 18, 6);
+      fillRR(c, GLASS, -w / 2 + 10, bot - 26, w - 20, 12, 5);
+      fillRR(c, 'rgba(255,255,255,0.22)', -w / 2 + 10, top + 42, w - 20, 20, 6);
+      if (kind === 'taxi') {
+        c.fillStyle = '#1f2937';
+        for (i = 0; i < 6; i++) c.fillRect(-w / 2 + 3 + i * 8, i % 2 ? 22 : 18, 8, 4);
+        fillRR(c, '#ffffff', -9, top + 46, 18, 11, 3);
+        fillRR(c, '#1f2937', -5, top + 50, 10, 3, 1);
+      }
+      carLights(c, w, h, bright);
+    } else if (kind === 'pickup') {
+      wheelPair(c, w / 2 - 1, top + 14, 11, 23);
+      wheelPair(c, w / 2 - 1, bot - 36, 11, 23);
+      fillRR(c, color, -w / 2, top, w, h, 11); outline(c);
+      fillRR(c, GLASS, -w / 2 + 8, top + 22, w - 16, 16, 5);
+      fillRR(c, 'rgba(255,255,255,0.22)', -w / 2 + 9, top + 40, w - 18, 14, 5);
+      fillRR(c, 'rgba(0,0,0,0.32)', -w / 2 + 6, top + 58, w - 12, h - 66, 4);   // cargo bed
+      fillRR(c, '#c98b4a', -w / 2 + 11, top + 64, 14, 14, 2);                    // crates
+      fillRR(c, '#e0a868', w / 2 - 27, top + 70, 16, 16, 2);
+      carLights(c, w, h, bright);
+    } else if (kind === 'monster') {
+      wheelPair(c, w / 2 - 3, top + 4, 20, 32);
+      wheelPair(c, w / 2 - 3, bot - 36, 20, 32);
+      c.fillStyle = '#4b5563';
+      for (i = 0; i < 4; i++) {
+        c.fillRect(-w / 2 - 7, top + 8 + i * 7, 20, 2);
+        c.fillRect(w / 2 - 13, top + 8 + i * 7, 20, 2);
+        c.fillRect(-w / 2 - 7, bot - 32 + i * 7, 20, 2);
+        c.fillRect(w / 2 - 13, bot - 32 + i * 7, 20, 2);
+      }
+      fillRR(c, color, -w / 2 + 11, top + 2, w - 22, h - 4, 11); outline(c);
+      fillRR(c, GLASS, -w / 2 + 16, top + 24, w - 32, 15, 5);
+      fillRR(c, GLASS, -w / 2 + 17, bot - 24, w - 34, 10, 4);
+      fillRR(c, '#ffd21f', -9, top + 8, 6, 12, 2);                // hood stripes
+      fillRR(c, '#ffd21f', 3, top + 8, 6, 12, 2);
+      fillRR(c, 'rgba(255,255,255,0.22)', -w / 2 + 17, top + 43, w - 34, 22, 5);
+      c.fillStyle = bright ? '#fff59d' : '#ffe0b2';
+      c.fillRect(-w / 2 + 14, top + 3, 9, 5); c.fillRect(w / 2 - 23, top + 3, 9, 5);
+      c.fillStyle = '#ff5252';
+      c.fillRect(-w / 2 + 14, bot - 7, 9, 4); c.fillRect(w / 2 - 23, bot - 7, 9, 4);
+    } else if (kind === 'van') {
+      wheelPair(c, w / 2 - 1, top + 14, 10, 22);
+      wheelPair(c, w / 2 - 1, bot - 36, 10, 22);
+      fillRR(c, '#ffffff', -w / 2, top, w, h, 11); outline(c);
+      fillRR(c, GLASS, -w / 2 + 8, top + 14, w - 16, 16, 5);
+      fillRR(c, '#ff8fc0', -w / 2 + 2, top + 36, 7, h - 46, 3);   // pink stripes
+      fillRR(c, '#ff8fc0', w / 2 - 9, top + 36, 7, h - 46, 3);
+      // ice cream on the roof
+      c.fillStyle = '#e0a868';
+      c.beginPath(); c.moveTo(-10, top + 58); c.lineTo(10, top + 58); c.lineTo(0, top + 88); c.closePath(); c.fill();
+      disc(c, '#ff8fc0', 0, top + 54, 12);
+      disc(c, '#ffffff', -4, top + 50, 3);
+      carLights(c, w, h, bright);
+    } else if (kind === 'truck') {
+      wheelPair(c, w / 2 - 1, top + 10, 10, 20);
+      wheelPair(c, w / 2 - 1, top + 62, 10, 20);
+      wheelPair(c, w / 2 - 1, bot - 30, 10, 20);
+      fillRR(c, color, -w / 2 + 3, top, w - 6, 36, 9); outline(c);          // cab
+      fillRR(c, GLASS, -w / 2 + 10, top + 12, w - 20, 13, 4);
+      fillRR(c, '#f1f3f5', -w / 2, top + 40, w, h - 40, 6); outline(c);     // trailer
+      fillRR(c, color, -6, top + 46, 12, h - 52, 3);
+      c.fillStyle = 'rgba(0,0,0,0.12)';
+      for (i = 0; i < 3; i++) c.fillRect(-w / 2 + 3, top + 62 + i * 22, w - 6, 2);
+      c.fillStyle = bright ? '#fff59d' : '#ffe0b2';
+      c.fillRect(-w / 2 + 8, top + 2, 10, 5); c.fillRect(w / 2 - 18, top + 2, 10, 5);
+      c.fillStyle = '#ff5252';
+      c.fillRect(-w / 2 + 5, bot - 6, 11, 4); c.fillRect(w / 2 - 16, bot - 6, 11, 4);
+    } else if (kind === 'bus') {
+      wheelPair(c, w / 2 - 1, top + 16, 10, 22);
+      wheelPair(c, w / 2 - 1, bot - 40, 10, 22);
+      fillRR(c, '#ffb300', -w / 2, top, w, h, 10); outline(c);
+      fillRR(c, GLASS, -w / 2 + 7, top + 10, w - 14, 15, 5);
+      c.fillStyle = '#37474f';
+      for (i = 0; i < 5; i++) {
+        c.fillRect(-w / 2 + 3, top + 34 + i * 19, 5, 13);
+        c.fillRect(w / 2 - 8, top + 34 + i * 19, 5, 13);
+      }
+      fillRR(c, '#ffe082', -12, top + 40, 24, 20, 4);            // roof hatches
+      fillRR(c, '#ffe082', -12, top + 84, 24, 20, 4);
+      fillRR(c, '#1f2937', -w / 2 + 6, bot - 5, w - 12, 3, 1);
+      carLights(c, w, h, bright);
+    }
   }
 
   function drawCone(x, y) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-    rr(-19, -17, 44, 44, 8); ctx.fill();
-    ctx.fillStyle = '#ff7a00';
-    rr(-22, -22, 44, 44, 8); ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ff7a00';
-    ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ffb066';
-    ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();
+    fillRR(ctx, 'rgba(0,0,0,0.2)', -19, -17, 44, 44, 8);
+    fillRR(ctx, '#ff7a00', -22, -22, 44, 44, 8);
+    disc(ctx, '#ffffff', 0, 0, 15);
+    disc(ctx, '#ff7a00', 0, 0, 10);
+    disc(ctx, '#ffb066', 0, 0, 4);
     ctx.restore();
+  }
+
+  function starPath(c, outer, inner) {
+    c.beginPath();
+    for (var i = 0; i < 10; i++) {
+      var r = i % 2 === 0 ? outer : inner;
+      var a = -Math.PI / 2 + i * Math.PI / 5;
+      if (i === 0) c.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+      else c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    c.closePath();
   }
 
   function drawStar(x, y, t) {
@@ -635,15 +1049,8 @@
     ctx.rotate(Math.sin(t * 3) * 0.25);
     var s = 1 + Math.sin(t * 6) * 0.08;
     ctx.scale(s, s);
-    ctx.beginPath();
-    for (var i = 0; i < 10; i++) {
-      var r = i % 2 === 0 ? 20 : 9;
-      var a = -Math.PI / 2 + i * Math.PI / 5;
-      if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-      else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-    }
-    ctx.closePath();
-    ctx.fillStyle = '#ffd21f';
+    starPath(ctx, 20, 9);
+    ctx.fillStyle = dbl > 0 ? '#fff36b' : '#ffd21f';
     ctx.fill();
     ctx.lineWidth = 3;
     ctx.lineJoin = 'round';
@@ -652,37 +1059,246 @@
     ctx.restore();
   }
 
-  function drawScenery() {
-    // grass
-    ctx.fillStyle = '#5cc24a';
-    ctx.fillRect(0, 0, W, H);
-    // road
-    ctx.fillStyle = '#5b6470';
-    ctx.fillRect(ROAD_X, 0, LANE_W * 3, H);
-    // kerbs
+  // Power-up badge, drawn around 0,0
+  function drawPowerIcon(ptype) {
+    disc(ctx, POWER_INFO[ptype].color, 0, 0, 20);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(ROAD_X - 5, 0, 5, H);
-    ctx.fillRect(ROAD_X + LANE_W * 3, 0, 5, H);
-    ctx.fillStyle = '#ff5a5a';
-    for (var ky = -80 + roadOffset; ky < H; ky += 80) {
+    ctx.lineCap = 'butt';
+    if (ptype === 'nitro') {
+      ctx.fillStyle = '#fff36b';
+      ctx.beginPath();
+      ctx.moveTo(3, -13); ctx.lineTo(-8, 2); ctx.lineTo(-1, 2); ctx.lineTo(-3, 13);
+      ctx.lineTo(8, -3); ctx.lineTo(1, -3); ctx.closePath(); ctx.fill();
+    } else if (ptype === 'shield') {
+      ctx.beginPath();
+      ctx.moveTo(0, -12); ctx.lineTo(9, -8); ctx.lineTo(9, 0);
+      ctx.quadraticCurveTo(9, 8, 0, 12); ctx.quadraticCurveTo(-9, 8, -9, 0);
+      ctx.lineTo(-9, -8); ctx.closePath(); ctx.fill();
+    } else if (ptype === 'magnet') {
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(-7, -9); ctx.lineTo(-7, 2); ctx.arc(0, 2, 7, Math.PI, 0, true); ctx.lineTo(7, -9);
+      ctx.stroke();
+      ctx.fillStyle = '#ffd21f';
+      ctx.fillRect(-10, -11, 6, 5); ctx.fillRect(4, -11, 6, 5);
+    } else if (ptype === 'heart') {
+      ctx.beginPath();
+      ctx.moveTo(0, 11);
+      ctx.bezierCurveTo(-17, -1, -9, -15, 0, -5);
+      ctx.bezierCurveTo(9, -15, 17, -1, 0, 11);
+      ctx.fill();
+    } else {
+      ctx.font = 'bold 17px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('×2', 0, 1);
+    }
+  }
+
+  function drawPower(e, t) {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    var s = 1 + Math.sin(t * 6 + e.lane) * 0.1;
+    disc(ctx, 'rgba(255,255,255,0.35)', 0, 0, 27 * s);
+    ctx.scale(s, s);
+    drawPowerIcon(e.ptype);
+    ctx.restore();
+  }
+
+  // ---------- Scenery ----------
+  function drawSceneItem(o) {
+    var x = o.x, y = o.y, s = o.s, i;
+    ctx.save();
+    ctx.translate(x, y);
+    switch (o.type) {
+      case 'tree':
+        disc(ctx, 'rgba(0,0,0,0.15)', 3, 4, 16);
+        disc(ctx, '#2e8b3d', 0, 0, 14 + s * 4);
+        disc(ctx, '#48a956', -4, -4, 8);
+        break;
+      case 'bush':
+        disc(ctx, '#3f9e4d', -6, 2, 9);
+        disc(ctx, '#3f9e4d', 6, 3, 8);
+        disc(ctx, '#58b865', 0, -3, 9);
+        break;
+      case 'flowers':
+        var cols = ['#ff6fa5', '#ffffff', '#ffd21f'];
+        for (i = 0; i < 3; i++) {
+          var fx = (i - 1) * 11, fy = (i % 2) * 9 - 4;
+          disc(ctx, cols[(i + Math.floor(s * 3)) % 3], fx, fy, 5);
+          disc(ctx, '#ff9f1c', fx, fy, 2);
+        }
+        break;
+      case 'cactus':
+        fillRR(ctx, 'rgba(0,0,0,0.12)', -4, 12, 16, 6, 3);
+        fillRR(ctx, '#3d9b4b', -5, -16, 10, 32, 5);
+        fillRR(ctx, '#3d9b4b', -14, -6, 6, 14, 3);
+        fillRR(ctx, '#3d9b4b', -14, 3, 12, 6, 3);
+        fillRR(ctx, '#3d9b4b', 8, -11, 6, 13, 3);
+        fillRR(ctx, '#3d9b4b', 3, -3, 11, 6, 3);
+        disc(ctx, '#ff6fa5', 0, -16, 3);
+        break;
+      case 'rock':
+        ctx.fillStyle = '#a58a6a';
+        ctx.beginPath(); ctx.ellipse(0, 2, 15, 10, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#c2a784';
+        ctx.beginPath(); ctx.ellipse(-4, -1, 7, 4, 0, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'pine':
+        ctx.fillStyle = '#2f7d57';
+        for (i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.moveTo(0, -20 + i * 9); ctx.lineTo(-9 - i * 3, -6 + i * 10); ctx.lineTo(9 + i * 3, -6 + i * 10);
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-5, -12); ctx.lineTo(5, -12); ctx.closePath(); ctx.fill();
+        ctx.fillRect(-7, -4, 14, 2);
+        break;
+      case 'snowman':
+        disc(ctx, 'rgba(120,150,180,0.35)', 2, 10, 12);
+        disc(ctx, '#ffffff', 0, 6, 11);
+        ctx.lineWidth = 1.5; ctx.strokeStyle = '#b9cfe0'; ctx.stroke();
+        disc(ctx, '#ffffff', 0, -9, 8);
+        ctx.stroke();
+        disc(ctx, '#1f2937', -3, -11, 1.4);
+        disc(ctx, '#1f2937', 3, -11, 1.4);
+        disc(ctx, '#ff7a00', 0, -8, 2);
+        break;
+      case 'palm':
+        ctx.fillStyle = '#2fa35a';
+        for (i = 0; i < 6; i++) {
+          ctx.save();
+          ctx.rotate(i * Math.PI / 3 + s * 2);
+          ctx.beginPath(); ctx.ellipse(10, 0, 11, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+        disc(ctx, '#8a5a2b', 0, 0, 5);
+        break;
+      case 'parasol':
+        var pc = s < 0.5 ? '#ff5a5a' : '#29b6f6';
+        for (i = 0; i < 8; i++) {
+          ctx.fillStyle = i % 2 ? '#ffffff' : pc;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 15, i * Math.PI / 4, (i + 1) * Math.PI / 4); ctx.closePath(); ctx.fill();
+        }
+        disc(ctx, '#1f2937', 0, 0, 2);
+        break;
+      case 'boat':
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.moveTo(0, -17); ctx.quadraticCurveTo(11, -2, 8, 14); ctx.lineTo(-8, 14);
+        ctx.quadraticCurveTo(-11, -2, 0, -17); ctx.fill();
+        fillRR(ctx, s < 0.5 ? '#ff5a5a' : '#ffd21f', -5, -3, 10, 12, 3);
+        break;
+      case 'buoy':
+        disc(ctx, '#ff5a5a', 0, 0, 9);
+        disc(ctx, '#ffffff', 0, 0, 5);
+        break;
+      case 'wave':
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+        ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-14, 0); ctx.quadraticCurveTo(-7, -7, 0, 0); ctx.quadraticCurveTo(7, 7, 14, 0); ctx.stroke();
+        break;
+      case 'building':
+        fillRR(ctx, '#151b30', -17, -22, 36, 46, 4);
+        fillRR(ctx, '#3b4668', -19, -24, 36, 46, 4);
+        for (i = 0; i < 6; i++) {
+          var lit = ((i * 7 + Math.floor(s * 10)) % 3) !== 0;
+          ctx.fillStyle = lit ? '#ffe98a' : '#222a45';
+          ctx.fillRect(-14 + (i % 2) * 15, -18 + Math.floor(i / 2) * 13, 10, 8);
+        }
+        break;
+      case 'lamp':
+        disc(ctx, 'rgba(255,233,138,0.22)', 0, 0, 19);
+        disc(ctx, 'rgba(255,233,138,0.4)', 0, 0, 11);
+        disc(ctx, '#fff6c9', 0, 0, 5);
+        break;
+      case 'planet':
+        var pcols = ['#ff8fc0', '#7bdff2', '#ffd21f', '#b388ff'];
+        disc(ctx, pcols[Math.floor(s * 4) % 4], 0, 0, 12);
+        disc(ctx, 'rgba(255,255,255,0.3)', -4, -4, 5);
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.ellipse(0, 0, 19, 6, -0.4, 0, Math.PI * 2); ctx.stroke();
+        break;
+      case 'twinkle':
+        var tw = 0.5 + 0.5 * Math.sin(performance.now() / 300 + s * 20);
+        ctx.globalAlpha = 0.4 + tw * 0.6;
+        ctx.fillStyle = '#ffffff';
+        for (i = 0; i < 3; i++) {
+          ctx.save();
+          ctx.translate((i - 1) * 12, ((i * 13 + s * 30) % 24) - 12);
+          starPath(ctx, 5, 1.6);
+          ctx.fill();
+          ctx.restore();
+        }
+        break;
+    }
+    ctx.restore();
+  }
+
+  function drawGround(z, y0, y1) {
+    if (y1 <= y0) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, y0, W, y1 - y0);
+    ctx.clip();
+    ctx.fillStyle = z.left;
+    ctx.fillRect(0, y0, ROAD_X, y1 - y0);
+    ctx.fillStyle = z.right;
+    ctx.fillRect(ROAD_X + LANE_W * 3, y0, W - ROAD_X - LANE_W * 3, y1 - y0);
+    ctx.fillStyle = z.road;
+    ctx.fillRect(ROAD_X, y0, LANE_W * 3, y1 - y0);
+    // kerbs
+    ctx.fillStyle = z.kerbA;
+    ctx.fillRect(ROAD_X - 5, y0, 5, y1 - y0);
+    ctx.fillRect(ROAD_X + LANE_W * 3, y0, 5, y1 - y0);
+    var t = performance.now() / 1000;
+    var n = 0;
+    for (var ky = -80 + roadOffset; ky < H; ky += 80, n++) {
+      ctx.fillStyle = z.rainbow ? 'hsl(' + Math.floor((n * 55 + t * 90) % 360) + ',95%,62%)' : z.kerbB;
       ctx.fillRect(ROAD_X - 5, ky, 5, 40);
       ctx.fillRect(ROAD_X + LANE_W * 3, ky, 5, 40);
     }
     // lane dashes
-    ctx.fillStyle = '#f5f5f5';
+    ctx.fillStyle = z.dash;
     for (var l = 1; l < 3; l++) {
       var lx = ROAD_X + LANE_W * l - 3;
       for (var y = -80 + roadOffset; y < H; y += 80) ctx.fillRect(lx, y, 6, 40);
     }
-    // trees
-    for (var i = 0; i < trees.length; i++) {
-      var t = trees[i];
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.beginPath(); ctx.arc(t.x + 3, t.y + 4, t.r, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#2e8b3d';
-      ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#48a956';
-      ctx.beginPath(); ctx.arc(t.x - t.r * 0.25, t.y - t.r * 0.25, t.r * 0.55, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawCheckpoint(y) {
+    for (var row = 0; row < 2; row++) {
+      for (var i = 0; i < 30; i++) {
+        ctx.fillStyle = (i + row) % 2 ? '#1f2937' : '#ffffff';
+        ctx.fillRect(ROAD_X + i * 10, y - 10 + row * 10, 10, 10);
+      }
+    }
+  }
+
+  function drawTimers() {
+    var list = [];
+    if (nitro > 0) list.push(['nitro', nitro / nitroDur]);
+    if (magnet > 0) list.push(['magnet', magnet / magnetDur]);
+    if (dbl > 0) list.push(['dbl', dbl / dblDur]);
+    if (shield) list.push(['shield', 1]);
+    for (var i = 0; i < list.length; i++) {
+      ctx.save();
+      ctx.translate(26 + i * 44, 84);
+      disc(ctx, 'rgba(0,0,0,0.3)', 0, 0, 19);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(0, 0, 17, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.001, list[i][1]));
+      ctx.stroke();
+      ctx.scale(0.62, 0.62);
+      drawPowerIcon(list[i][0]);
+      ctx.restore();
     }
   }
 
@@ -691,31 +1307,107 @@
     ctx.save();
     if (shake > 0 && state === 'playing') ctx.translate(rand(-4, 4), rand(-4, 4));
 
-    drawScenery();
-
     var t = performance.now() / 1000;
     var i, e;
+
+    // ground: the old land below the checkpoint line, the new land above it
+    if (transitioning) {
+      drawGround(ZONES[zoneBelow], boundaryY, H + 10);
+      drawGround(ZONES[zoneAbove], -10, boundaryY);
+      drawCheckpoint(boundaryY);
+    } else {
+      drawGround(ZONES[zoneBelow], -10, H + 10);
+    }
+
+    for (i = 0; i < scenery.length; i++) {
+      if (scenery[i].y > -40 && scenery[i].y < H + 40) drawSceneItem(scenery[i]);
+    }
+
+    var showPlayer = state !== 'menu';
+    var dark = ZONES[zoneNow].dark;
+
+    // headlight beams at night
+    if (showPlayer && dark) {
+      var g = ctx.createLinearGradient(0, player.y - player.h / 2, 0, player.y - player.h / 2 - 150);
+      g.addColorStop(0, 'rgba(255,245,170,0.45)');
+      g.addColorStop(1, 'rgba(255,245,170,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(player.x - 20, player.y - player.h / 2 + 4);
+      ctx.lineTo(player.x + 20, player.y - player.h / 2 + 4);
+      ctx.lineTo(player.x + 48, player.y - player.h / 2 - 150);
+      ctx.lineTo(player.x - 48, player.y - player.h / 2 - 150);
+      ctx.closePath();
+      ctx.fill();
+    }
+
     for (i = 0; i < entities.length; i++) {
       e = entities[i];
       if (e.type === 'star') drawStar(e.x, e.y, t + e.lane);
+      else if (e.type === 'power') drawPower(e, t);
       else if (e.type === 'cone') drawCone(e.x, e.y);
-      else drawCar(e.x, e.y, e.w, e.h, e.color, 0, false);
+      else {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        if (e.rot) ctx.rotate(e.rot);
+        drawVehicle(ctx, e.kind, e.color, false);
+        ctx.restore();
+      }
     }
 
-    var blink = invincible > 0 && state === 'playing' && Math.floor(invincible * 10) % 2 === 1;
-    if (!blink && state !== 'menu') {
-      var tilt = (laneX(player.lane) - player.x) * 0.004;
-      drawCar(player.x, player.y, player.w, player.h, CAR_COLORS[colorIndex], tilt, true);
+    if (showPlayer) {
+      var blink = invincible > 0 && state === 'playing' && Math.floor(invincible * 10) % 2 === 1;
+      if (!blink) {
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.rotate((laneX(player.lane) - player.x) * 0.004);
+        if (nitro > 0) {
+          var fl = rand(26, 44);
+          ctx.fillStyle = '#ff7a00';
+          ctx.beginPath(); ctx.moveTo(-12, player.h / 2 - 4); ctx.lineTo(12, player.h / 2 - 4); ctx.lineTo(0, player.h / 2 + fl); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#ffe14d';
+          ctx.beginPath(); ctx.moveTo(-6, player.h / 2 - 4); ctx.lineTo(6, player.h / 2 - 4); ctx.lineTo(0, player.h / 2 + fl * 0.6); ctx.closePath(); ctx.fill();
+        }
+        drawVehicle(ctx, player.kind, CAR_COLORS[colorIndex], true);
+        ctx.restore();
+      }
+      if (shield) {
+        var pr = 64 + Math.sin(t * 5) * 2;
+        disc(ctx, 'rgba(120,215,255,0.18)', player.x, player.y, pr);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(160,230,255,0.9)';
+        ctx.stroke();
+      }
+      if (magnet > 0) {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(206,147,216,' + (0.5 - ((t * 1.5) % 1) * 0.5) + ')';
+        ctx.beginPath(); ctx.arc(player.x, player.y, 40 + ((t * 1.5) % 1) * 60, 0, Math.PI * 2); ctx.stroke();
+      }
     }
 
     for (i = 0; i < particles.length; i++) {
       var p = particles[i];
       ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.max));
-      ctx.fillStyle = p.color;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      disc(ctx, p.color, p.x, p.y, p.r);
     }
     ctx.globalAlpha = 1;
+
+    // speed lines during nitro
+    if (nitro > 0 && state === 'playing') {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      for (i = 0; i < 9; i++) ctx.fillRect(rand(ROAD_X, ROAD_X + LANE_W * 3), rand(0, H), 3, rand(40, 110));
+    }
+
+    // snow in the snowy land
+    if (showPlayer && zoneNow === 2) {
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      for (i = 0; i < flakes.length; i++) {
+        ctx.beginPath(); ctx.arc(flakes[i].x, flakes[i].y, flakes[i].r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
     ctx.restore();
+    if (state === 'playing' || state === 'paused') drawTimers();
   }
 
   // ---------- Main loop ----------
@@ -725,8 +1417,10 @@
     if (!(dt > 0)) dt = 0;
     if (dt > 0.05) dt = 0.05;
 
-    if (state === 'playing') update(dt);
-    else if (state === 'menu') scrollScenery(90 * dt);
+    if (dt > 0) {
+      if (state === 'playing') update(dt);
+      else if (state === 'menu') scrollScenery(90 * dt);
+    }
 
     draw();
     window.requestAnimationFrame(frame);
@@ -734,8 +1428,7 @@
 
   // ---------- Go ----------
   muteBtn.textContent = muted ? '🔇' : '🔊';
-  buildSwatches();
-  initTrees();
+  buildPickers();
   resetGame();
   showOverlay('menu');
   resize();
