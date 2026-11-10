@@ -99,11 +99,13 @@
     transform: translate(-50%, -0.6em) scale(0.8);
     background: rgba(255, 255, 255, 0.95);
     color: #1f2937;
-    border-radius: 999px;
+    border-radius: 1.3em;
     padding: 0.3em 0.9em;
     font-size: 1.35em;
     font-weight: bold;
-    white-space: nowrap;
+    width: max-content;
+    text-align: center;
+    line-height: 1.2;
     box-shadow: 0 0.15em 0 rgba(0, 0, 0, 0.25);
     opacity: 0;
     transition: opacity 0.2s, transform 0.2s;
@@ -154,20 +156,38 @@
   #trait { font-size: 1em !important; font-weight: bold; color: #ffe98a; min-height: 1.3em; }
   #nextLine { font-size: 0.95em !important; opacity: 0.95; }
   #hint { font-size: 0.9em !important; opacity: 0.9; }
-  #playBtn {
+  #buttons { display: flex; flex-wrap: wrap; gap: 0.6em; justify-content: center; }
+  .bigBtn {
     border: none;
     border-radius: 999px;
     background: #ffd21f;
     color: #1f2937;
     font-family: inherit;
     font-weight: bold;
-    font-size: 1.7em;
-    padding: 0.4em 1.3em;
+    font-size: 1.4em;
+    padding: 0.45em 1em;
     cursor: pointer;
     box-shadow: 0 0.22em 0 #c99a00;
   }
-  #playBtn:active { transform: translateY(0.12em); box-shadow: 0 0.1em 0 #c99a00; }
-  #playBtn:disabled { background: #b8c0cc; box-shadow: 0 0.22em 0 #8892a0; cursor: default; }
+  .bigBtn:active { transform: translateY(0.12em); box-shadow: 0 0.1em 0 #c99a00; }
+  #raceBtn { background: #ff8a3d; box-shadow: 0 0.22em 0 #c75a14; }
+  #raceBtn:active { box-shadow: 0 0.1em 0 #c75a14; }
+  .bigBtn:disabled, #raceBtn:disabled { background: #b8c0cc; box-shadow: 0 0.22em 0 #8892a0; cursor: default; }
+  #langBtn {
+    position: absolute;
+    top: calc(3.6em + env(safe-area-inset-top, 0px));
+    right: 0.6em;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #1f2937;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 0.95em;
+    padding: 0.35em 0.8em;
+    cursor: pointer;
+    box-shadow: 0 0.15em 0 rgba(0, 0, 0, 0.25);
+  }
   #garage { display: flex; align-items: center; justify-content: center; gap: 0.7em; }
   #carView {
     width: 7em; height: 9em;
@@ -220,6 +240,7 @@
   <div class="arrow" id="arrowR">▶</div>
 
   <div id="overlay">
+    <button id="langBtn" aria-label="Change language">Ελληνικά</button>
     <h1 id="title">🚗 Zoom Zoom Cars</h1>
     <p id="message">Collect ⭐ stars and power-ups!<br>Steer around traffic on the twisty road.</p>
     <p id="scoreLine" class="hidden"></p>
@@ -231,7 +252,10 @@
     <p id="carName"></p>
     <p id="trait"></p>
     <div id="colors"></div>
-    <button id="playBtn">▶ Play</button>
+    <div id="buttons">
+      <button class="bigBtn" id="playBtn">▶ Play</button>
+      <button class="bigBtn" id="raceBtn">🏁 Race 1</button>
+    </div>
     <p id="nextLine"></p>
     <p id="hint">Tap the left or right side to steer · or use ← → keys</p>
   </div>
@@ -268,50 +292,109 @@
 
   // Vehicles the player can drive. "unlock" is the best score needed.
   var PLAYER_VEHICLES = [
-    { kind: 'car',       name: 'City Car',        unlock: 0,    hearts: 3, trait: '🧲 Magnets last longer' },
-    { kind: 'pickup',    name: 'Pickup Truck',    unlock: 0,    hearts: 4, trait: '❤️ One extra heart' },
-    { kind: 'racer',     name: 'Racing Car',      unlock: 250,  hearts: 3, trait: '⚡ Nitro lasts longer' },
-    { kind: 'monster',   name: 'Monster Truck',   unlock: 500,  hearts: 3, trait: '💥 Squashes things on the road' },
-    { kind: 'superc',    name: 'Thunder Bolt',    unlock: 900,  hearts: 3, trait: '⚡ Free nitro every level' },
-    { kind: 'firetruck', name: 'Rescue Truck',    unlock: 1400, hearts: 5, trait: '❤️ Five hearts' },
-    { kind: 'rocket',    name: 'Rocket Car',      unlock: 2000, hearts: 3, trait: '🛡️ Free shield every level' },
-    { kind: 'gold',      name: 'Golden Champion', unlock: 3000, hearts: 4, trait: '⭐ Every star counts double' }
+    { kind: 'car',       unlock: 0,     hearts: 3 },
+    { kind: 'pickup',    unlock: 0,     hearts: 4 },
+    { kind: 'racer',     unlock: 300,   hearts: 3 },
+    { kind: 'monster',   unlock: 1000,  hearts: 3 },
+    { kind: 'superc',    unlock: 2500,  hearts: 3 },
+    { kind: 'firetruck', unlock: 5000,  hearts: 5 },
+    { kind: 'rocket',    unlock: 10000, hearts: 3 },
+    { kind: 'gold',      unlock: 15000, hearts: 4 }
   ];
   var TRAFFIC_KINDS = ['car', 'car', 'taxi', 'racer', 'pickup', 'van', 'truck', 'bus'];
 
   // The lands. Lands with "unlock" join the journey once that best score is reached.
   var ZONES = [
-    { name: '🌳 Sunny Meadow', unlock: 0, left: '#5cc24a', right: '#5cc24a', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff5a5a',
+    { key: 'meadow', icon: '🌳', unlock: 0, left: '#5cc24a', right: '#5cc24a', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff5a5a',
       weather: 'petals', block: 'cone', sceneL: ['tree', 'tree', 'bush', 'flowers'], sceneR: ['tree', 'tree', 'bush', 'flowers'] },
-    { name: '🌵 Desert Dunes', unlock: 0, left: '#e8c170', right: '#e8c170', road: '#6b6257', dash: '#fff3d6', kerbA: '#ffffff', kerbB: '#e07b39',
+    { key: 'desert', icon: '🌵', unlock: 0, left: '#e8c170', right: '#e8c170', road: '#6b6257', dash: '#fff3d6', kerbA: '#ffffff', kerbB: '#e07b39',
       weather: 'sand', block: 'tumble', sceneL: ['cactus', 'cactus', 'rock'], sceneR: ['cactus', 'rock', 'cactus'] },
-    { name: '❄️ Snowy Peaks', unlock: 0, left: '#eef6fb', right: '#eef6fb', road: '#6a7482', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#4aa3df',
+    { key: 'snow', icon: '❄️', unlock: 0, left: '#eef6fb', right: '#eef6fb', road: '#6a7482', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#4aa3df',
       weather: 'snow', block: 'snowball', sceneL: ['pine', 'pine', 'snowman'], sceneR: ['pine', 'snowman', 'pine'] },
-    { name: '🏖️ Sunny Beach', unlock: 0, left: '#f4dc9a', right: '#39b6e6', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff9f1c',
+    { key: 'beach', icon: '🏖️', unlock: 0, left: '#f4dc9a', right: '#39b6e6', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff9f1c',
       weather: 'gulls', block: 'ball', sceneL: ['palm', 'palm', 'parasol'], sceneR: ['boat', 'buoy', 'wave', 'wave'] },
-    { name: '🌙 Night City', unlock: 400, left: '#27304a', right: '#27304a', road: '#3a4152', dash: '#ffe98a', kerbA: '#cfd6e6', kerbB: '#7b61ff', dark: true,
+    { key: 'city', icon: '🌙', unlock: 600, left: '#27304a', right: '#27304a', road: '#3a4152', dash: '#ffe98a', kerbA: '#cfd6e6', kerbB: '#7b61ff', dark: true,
       weather: 'rain', block: 'barrier', sceneL: ['building', 'building', 'lamp'], sceneR: ['building', 'lamp', 'building'] },
-    { name: '🚀 Rainbow Space', unlock: 800, left: '#1b1140', right: '#1b1140', road: '#2b2060', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#ff5ad1', dark: true, rainbow: true,
+    { key: 'space', icon: '🚀', unlock: 1600, left: '#1b1140', right: '#1b1140', road: '#2b2060', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#ff5ad1', dark: true, rainbow: true,
       weather: 'meteors', block: 'asteroid', sceneL: ['planet', 'twinkle', 'twinkle'], sceneR: ['twinkle', 'planet', 'twinkle'] },
-    { name: '🌋 Volcano Valley', unlock: 1300, left: '#3b2a2a', right: '#3b2a2a', road: '#4d4343', dash: '#ffb347', kerbA: '#2a1d1d', kerbB: '#ff5a1f', dark: true,
+    { key: 'volcano', icon: '🌋', unlock: 3500, left: '#3b2a2a', right: '#3b2a2a', road: '#4d4343', dash: '#ffb347', kerbA: '#2a1d1d', kerbB: '#ff5a1f', dark: true,
       weather: 'embers', block: 'lavarock', sceneL: ['volcano', 'lavapool', 'darkrock'], sceneR: ['lavapool', 'darkrock', 'volcano'] },
-    { name: '🍭 Candy Land', unlock: 1800, left: '#ffc9e3', right: '#c9f0ff', road: '#7d5ba6', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#ff5c8a',
+    { key: 'candy', icon: '🍭', unlock: 7000, left: '#ffc9e3', right: '#c9f0ff', road: '#7d5ba6', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#ff5c8a',
       weather: 'sprinkles', block: 'donut', sceneL: ['lollipop', 'cupcake', 'cane'], sceneR: ['cupcake', 'lollipop', 'cane'] }
   ];
 
   // Everything that can be unlocked, in order of the score needed
   var UNLOCKS = [];
-  PLAYER_VEHICLES.forEach(function (v) { if (v.unlock > 0) UNLOCKS.push({ score: v.unlock, name: v.name }); });
-  ZONES.forEach(function (z) { if (z.unlock > 0) UNLOCKS.push({ score: z.unlock, name: z.name }); });
+  PLAYER_VEHICLES.forEach(function (v) { if (v.unlock > 0) UNLOCKS.push({ score: v.unlock, veh: v }); });
+  ZONES.forEach(function (z) { if (z.unlock > 0) UNLOCKS.push({ score: z.unlock, zone: z }); });
   UNLOCKS.sort(function (a, b) { return a.score - b.score; });
 
   var POWER_INFO = {
-    nitro:  { color: '#ff6b00', label: '⚡ Nitro!' },
-    shield: { color: '#29b6f6', label: '🛡️ Shield!' },
-    magnet: { color: '#ab47bc', label: '🧲 Star magnet!' },
-    dbl:    { color: '#43a047', label: '✨ Double stars!' },
-    heart:  { color: '#ff5c8a', label: '❤️ Extra heart!' }
+    nitro:  { color: '#ff6b00' },
+    shield: { color: '#29b6f6' },
+    magnet: { color: '#ab47bc' },
+    dbl:    { color: '#43a047' },
+    heart:  { color: '#ff5c8a' }
   };
+
+  // ---------- Words (English and Greek) ----------
+  var WORDS = {
+    en: {
+      title: '🚗 Zoom Zoom Cars',
+      msg: 'Collect ⭐ stars and power-ups!<br>Steer around traffic on the twisty road.',
+      play: '▶ Play', raceWord: 'Race', locked: '🔒 Locked', keepGoing: '▶ Keep going', paused: '⏸ Paused',
+      hint: 'Tap a side or slide your finger to steer · or use ← → keys',
+      best: 'Best', nextUnlock: 'Next unlock at {s} ⭐: {n}', allUnlocked: '🏆 Everything is unlocked!',
+      scoreToUnlock: '🔒 Score {s} ⭐ to unlock', newHigh: '🏆 New high score!', great: '🏁 Great driving!',
+      level: 'Level', unlockedList: '🔓 Unlocked: {n}!', bestEver: 'Your best drive ever! 🎉',
+      bestScore: 'Best score: {s} ⭐', unlockedBanner: '🔓 {n} unlocked!', combo: 'Combo ×{n}!', zoom: 'Zoom!', kmh: 'km/h',
+      p_nitro: '⚡ Nitro!', p_shield: '🛡️ Shield!', p_magnet: '🧲 Star magnet!', p_dbl: '✨ Double stars!', p_heart: '❤️ Extra heart!',
+      v_car: 'City Car', v_pickup: 'Pickup Truck', v_racer: 'Racing Car', v_monster: 'Monster Truck',
+      v_superc: 'Thunder Bolt', v_firetruck: 'Rescue Truck', v_rocket: 'Rocket Car', v_gold: 'Golden Champion',
+      t_car: '🧲 Magnets last longer', t_pickup: '❤️ One extra heart', t_racer: '⚡ Nitro lasts longer',
+      t_monster: '💥 Squashes things on the road', t_superc: '⚡ Free nitro every level', t_firetruck: '❤️ Five hearts',
+      t_rocket: '🛡️ Free shield every level', t_gold: '⭐ Every star counts double',
+      z_meadow: 'Sunny Meadow', z_desert: 'Desert Dunes', z_snow: 'Snowy Peaks', z_beach: 'Sunny Beach',
+      z_city: 'Night City', z_space: 'Rainbow Space', z_volcano: 'Volcano Valley', z_candy: 'Candy Land',
+      raceStart: '🏁 Race {n} · Catch the rival!', rival: 'Rival', first: '🥇 1st', second: '🥈 2nd',
+      win: '🏆 You win!', winMsg: 'You beat the rival in race {n}!', lose: '🏁 So close!',
+      loseMsg: 'The rival got there first. Try again!', passed: '🥇 You passed the rival!', overtaken: 'The rival is ahead!',
+      otherLang: 'Ελληνικά'
+    },
+    el: {
+      title: '🚗 Βρουμ Βρουμ Αμαξάκια',
+      msg: 'Μάζεψε ⭐ αστέρια και δυνάμεις!<br>Απόφυγε τα οχήματα στον δρόμο με τις στροφές.',
+      play: '▶ Παίξε', raceWord: 'Αγώνας', locked: '🔒 Κλειδωμένο', keepGoing: '▶ Συνέχεια', paused: '⏸ Παύση',
+      hint: 'Πάτα αριστερά ή δεξιά, ή σύρε το δάχτυλό σου · ή τα πλήκτρα ← →',
+      best: 'Ρεκόρ', nextUnlock: 'Επόμενο ξεκλείδωμα στα {s} ⭐: {n}', allUnlocked: '🏆 Τα ξεκλείδωσες όλα!',
+      scoreToUnlock: '🔒 Φτάσε τα {s} ⭐ για να ξεκλειδώσει', newHigh: '🏆 Νέο ρεκόρ!', great: '🏁 Μπράβο, ωραία οδήγηση!',
+      level: 'Επίπεδο', unlockedList: '🔓 Ξεκλείδωσες: {n}!', bestEver: 'Η καλύτερη διαδρομή σου! 🎉',
+      bestScore: 'Ρεκόρ: {s} ⭐', unlockedBanner: '🔓 Ξεκλείδωσες: {n}!', combo: 'Σερί ×{n}!', zoom: 'Βρουμ!', kmh: 'χλμ/ώ',
+      p_nitro: '⚡ Νίτρο!', p_shield: '🛡️ Ασπίδα!', p_magnet: '🧲 Μαγνήτης!', p_dbl: '✨ Διπλά αστέρια!', p_heart: '❤️ Έξτρα καρδιά!',
+      v_car: 'Αυτοκίνητο Πόλης', v_pickup: 'Αγροτικό', v_racer: 'Αγωνιστικό', v_monster: 'Φορτηγό-Τέρας',
+      v_superc: 'Κεραυνός', v_firetruck: 'Πυροσβεστικό', v_rocket: 'Πύραυλος', v_gold: 'Χρυσός Πρωταθλητής',
+      t_car: '🧲 Οι μαγνήτες κρατάνε περισσότερο', t_pickup: '❤️ Μία έξτρα καρδιά', t_racer: '⚡ Το νίτρο κρατάει περισσότερο',
+      t_monster: '💥 Πατάει τα εμπόδια στον δρόμο', t_superc: '⚡ Δωρεάν νίτρο σε κάθε επίπεδο', t_firetruck: '❤️ Πέντε καρδιές',
+      t_rocket: '🛡️ Δωρεάν ασπίδα σε κάθε επίπεδο', t_gold: '⭐ Κάθε αστέρι μετράει διπλά',
+      z_meadow: 'Ηλιόλουστο Λιβάδι', z_desert: 'Αμμόλοφοι της Ερήμου', z_snow: 'Χιονισμένες Κορυφές', z_beach: 'Ηλιόλουστη Παραλία',
+      z_city: 'Νυχτερινή Πόλη', z_space: 'Διάστημα Ουράνιο Τόξο', z_volcano: 'Κοιλάδα του Ηφαιστείου', z_candy: 'Ζαχαροχώρα',
+      raceStart: '🏁 Αγώνας {n} · Πιάσε τον αντίπαλο!', rival: 'Αντίπαλος', first: '🥇 1ος', second: '🥈 2ος',
+      win: '🏆 Νίκησες!', winMsg: 'Κέρδισες τον αντίπαλο στον αγώνα {n}!', lose: '🏁 Παρά λίγο!',
+      loseMsg: 'Ο αντίπαλος τερμάτισε πρώτος. Ξαναπροσπάθησε!', passed: '🥇 Προσπέρασες τον αντίπαλο!', overtaken: 'Ο αντίπαλος πέρασε μπροστά!',
+      otherLang: 'English'
+    }
+  };
+  var lang = 'en';
+  function T(key, vars) {
+    var str = WORDS[lang][key];
+    if (str === undefined) str = WORDS.en[key];
+    if (vars) {
+      for (var k in vars) if (Object.prototype.hasOwnProperty.call(vars, k)) str = str.split('{' + k + '}').join(vars[k]);
+    }
+    return str;
+  }
+  function zoneName(z) { return z.icon + ' ' + T('z_' + z.key); }
+  function unlockName(u) { return u.veh ? T('v_' + u.veh.kind) : zoneName(u.zone); }
 
   // Fixed random numbers so weather can be drawn from the clock alone
   var RN = [];
@@ -327,7 +410,7 @@
   var elGarage = $('garage'), carView = $('carView'), elCarName = $('carName'), elTrait = $('trait');
   var elColors = $('colors'), elNextLine = $('nextLine'), elHint = $('hint');
   var playBtn = $('playBtn'), pauseBtn = $('pauseBtn'), muteBtn = $('muteBtn');
-  var prevBtn = $('prevBtn'), nextBtn = $('nextBtn');
+  var prevBtn = $('prevBtn'), nextBtn = $('nextBtn'), raceBtn = $('raceBtn'), langBtn = $('langBtn');
   var arrowL = $('arrowL'), arrowR = $('arrowR');
 
   // ---------- Safe storage ----------
@@ -350,6 +433,10 @@
   var best = parseInt(load('zzc_best', '0'), 10) || 0;
   if (best < 0) best = 0;
   var muted = load('zzc_muted', '0') === '1';
+  var raceWon = parseInt(load('zzc_race', '0'), 10) || 0;
+  if (raceWon < 0) raceWon = 0;
+  var navLang = (navigator.language || 'en').toLowerCase().indexOf('el') === 0 ? 'el' : 'en';
+  lang = load('zzc_lang', navLang) === 'el' ? 'el' : 'en';
   var colorIndex = loadIndex('zzc_color', CAR_COLORS.length);
   var vehicleIndex = loadIndex('zzc_vehicle2', PLAYER_VEHICLES.length);
   if (PLAYER_VEHICLES[vehicleIndex].unlock > best) vehicleIndex = 0;
@@ -360,7 +447,10 @@
   var elapsed = 0, distance = 0, bonus = 0, score = 0, combo = 0;
   var hearts = 3, maxHearts = 3;
   var speed = 300, speedMul = 1, rowTimer = 0, safeLane = 1, rowsSincePower = 0;
-  var invincible = 0, shake = 0, overAt = 0, camX = 0, clock = 0;
+  var invincible = 0, shake = 0, overAt = 0, camX = 0, camLane = 0, clock = 0;
+  var starSpeed = 0, slow = 0, lastOverlay = 'menu', ptr = null;
+  // race mode
+  var mode = 'endless', raceLevel = 1, raceLen = 0, raceBase = 330, raceBoost = 0, raceResult = null, bot = null;
   var nitro = 0, nitroFull = 3, magnet = 0, dbl = 0, shield = false;
   var nitroDur = 3, magnetDur = 7, dblDur = 8, squash = false, starMult = 1, freeNitro = false, freeShield = false;
   // lands and levels
@@ -373,7 +463,7 @@
   var bannerQueue = [], bannerFreeAt = 0, bannerTimer = 0;
 
   var scaleX = 1, scaleY = 1, lastTime = 0;
-  var shownScore = -1, shownHearts = -1, shownMax = -1, shownLevel = -1, shownGold = null;
+  var shownScore = -1, shownHearts = '', shownLevel = '', shownGold = null;
   var stripOff = [];
 
   function laneX(i) { return ROAD_X + LANE_W * i + LANE_W / 2; }
@@ -394,9 +484,11 @@
     var wy = worldY(sy);
     return Math.atan((curve(wy + 6) - curve(wy - 6)) / 12);
   }
+  // The view is locked to the road right under the car, so bends never make the car
+  // drift on screen. It only eases gently sideways when the car changes lane.
   function updateCamera(dt) {
-    var target = curve(distance) + (player.x - W / 2) * 0.35;
-    camX += (target - camX) * Math.min(1, dt * 4.5);
+    camLane += ((player.x - W / 2) * 0.7 - camLane) * Math.min(1, dt * 6);
+    camX = curve(distance) + camLane;
   }
 
   // ---------- Sound ----------
@@ -455,20 +547,18 @@
     bannerTimer = window.setTimeout(function () { elBanner.classList.remove('show'); }, 1500);
   }
   // Important banners wait their turn; small ones only show when nothing else is up.
-  function showBanner(text, important) {
+  function showBanner(text, important, isLevel) {
     if (important) {
       // a newer level banner replaces one that is still waiting
-      if (text.indexOf('Level ') === 0) {
-        bannerQueue = bannerQueue.filter(function (b) { return b.indexOf('Level ') !== 0; });
-      }
-      if (bannerQueue.length < 4) bannerQueue.push(text);
+      if (isLevel) bannerQueue = bannerQueue.filter(function (b) { return !b.lvl; });
+      if (bannerQueue.length < 4) bannerQueue.push({ text: text, lvl: !!isLevel });
     } else if (!bannerQueue.length && performance.now() >= bannerFreeAt) {
       putBanner(text);
     }
   }
   function pumpBanners(now) {
     if (bannerQueue.length && now >= bannerFreeAt && state === 'playing') {
-      putBanner(bannerQueue.shift());
+      putBanner(bannerQueue.shift().text);
       bannerFreeAt = now + 1700;
     }
   }
@@ -481,9 +571,9 @@
   }
   function nextUnlockText() {
     for (var i = 0; i < UNLOCKS.length; i++) {
-      if (UNLOCKS[i].score > best) return '🔓 Next unlock at ' + UNLOCKS[i].score + ' ⭐: ' + UNLOCKS[i].name;
+      if (UNLOCKS[i].score > best) return '🔓 ' + T('nextUnlock', { s: UNLOCKS[i].score, n: unlockName(UNLOCKS[i]) });
     }
-    return '🏆 Everything is unlocked!';
+    return T('allUnlocked');
   }
 
   // ---------- Setup ----------
@@ -520,15 +610,16 @@
     starMult = v.kind === 'gold' ? 2 : 1;
   }
 
-  function zoneLenFor(n) { return Math.min(18000, ZONE_BASE + 1500 * n); }
+  function zoneLenFor(n) { return mode === 'race' ? 8000 : Math.min(18000, ZONE_BASE + 1500 * n); }
 
   function resetGame() {
     applyVehicle();
     entities = []; particles = []; popups = [];
     elapsed = 0; distance = 0; bonus = 0; score = 0; combo = 0; hearts = maxHearts;
     speed = 300; speedMul = 1; rowTimer = 220; safeLane = 1; rowsSincePower = 3;
-    invincible = 0; shake = 0; camX = 0;
+    invincible = 0; shake = 0; camX = 0; camLane = 0;
     nitro = 0; magnet = 0; dbl = 0; shield = false;
+    starSpeed = 0; slow = 0; raceBoost = 0; raceResult = null; bot = null; ptr = null;
     // the journey: every land unlocked so far, in order
     seq = [];
     for (var i = 0; i < ZONES.length; i++) if (ZONES[i].unlock <= best) seq.push(i);
@@ -563,11 +654,13 @@
       disc(c, '#1f2937', 0, 6, 4);
       c.fillStyle = '#1f2937'; c.fillRect(-1.5, 6, 3, 9);
     }
-    elCarName.textContent = v.name;
-    elTrait.textContent = locked ? '🔒 Score ' + v.unlock + ' ⭐ to unlock' : v.trait;
+    elCarName.textContent = T('v_' + v.kind);
+    elTrait.textContent = locked ? T('scoreToUnlock', { s: v.unlock }) : T('t_' + v.kind);
     if (state !== 'paused') {
       playBtn.disabled = locked;
-      playBtn.textContent = locked ? '🔒 Locked' : (state === 'over' ? '▶ Play again' : '▶ Play');
+      raceBtn.disabled = locked;
+      playBtn.textContent = locked ? T('locked') : T('play');
+      raceBtn.textContent = '🏁 ' + T('raceWord') + ' ' + (raceWon + 1);
     }
   }
 
@@ -624,6 +717,7 @@
 
   // ---------- Screens ----------
   function showOverlay(kind) {
+    lastOverlay = kind;
     elOverlay.classList.remove('hidden');
     var showPicker = kind !== 'paused';
     elGarage.classList.toggle('hidden', !showPicker);
@@ -631,24 +725,32 @@
     elTrait.classList.toggle('hidden', !showPicker);
     elColors.classList.toggle('hidden', !showPicker);
     elNextLine.classList.toggle('hidden', !showPicker);
+    raceBtn.classList.toggle('hidden', !showPicker);
     elHint.classList.toggle('hidden', kind !== 'menu');
     elScoreLine.classList.toggle('hidden', kind !== 'over');
     elMessage.classList.toggle('hidden', kind === 'paused');
+    langBtn.textContent = T('otherLang');
+    elHint.textContent = T('hint');
     if (kind === 'menu') {
-      elTitle.textContent = '🚗 Zoom Zoom Cars';
-      elMessage.innerHTML = 'Collect ⭐ stars and power-ups!<br>Steer around traffic on the twisty road.';
-      elNextLine.textContent = (best > 0 ? 'Best: ' + best + ' ⭐ · ' : '') + nextUnlockText();
+      elTitle.textContent = T('title');
+      elMessage.innerHTML = T('msg');
+      elNextLine.textContent = (best > 0 ? T('best') + ': ' + best + ' ⭐ · ' : '') + nextUnlockText();
     } else if (kind === 'paused') {
-      elTitle.textContent = '⏸ Paused';
+      elTitle.textContent = T('paused');
       playBtn.disabled = false;
-      playBtn.textContent = '▶ Keep going';
+      playBtn.textContent = T('keepGoing');
+    } else if (mode === 'race') {
+      elTitle.textContent = raceResult ? T('win') : T('lose');
+      elScoreLine.textContent = '🏁 ' + T('raceWord') + ' ' + raceLevel;
+      elMessage.textContent = raceResult ? T('winMsg', { n: raceLevel }) : T('loseMsg');
+      elNextLine.textContent = nextUnlockText();
     } else {
       var isBest = score > 0 && score > bestAtStart;
-      elTitle.textContent = isBest ? '🏆 New high score!' : '🏁 Great driving!';
-      elScoreLine.textContent = score + ' ⭐ · Level ' + level;
+      elTitle.textContent = isBest ? T('newHigh') : T('great');
+      elScoreLine.textContent = score + ' ⭐ · ' + T('level') + ' ' + level;
       elMessage.textContent = runUnlocked.length
-        ? '🔓 Unlocked: ' + runUnlocked.join(', ') + '!'
-        : (isBest ? 'Your best drive ever! 🎉' : 'Best score: ' + best + ' ⭐');
+        ? T('unlockedList', { n: runUnlocked.map(unlockName).join(', ') })
+        : (isBest ? T('bestEver') : T('bestScore', { s: best }));
       elNextLine.textContent = nextUnlockText();
     }
     if (showPicker) drawGarage();
@@ -667,20 +769,45 @@
     elLevel.classList.remove('hidden');
   }
 
-  function startGame() {
+  function setLang(next) {
+    lang = next;
+    save('zzc_lang', lang);
+    document.documentElement.lang = lang;
+    document.title = T('title').replace('🚗 ', '');
+    showOverlay(lastOverlay);
+    updateHud(true);
+  }
+
+  function startGame(newMode) {
     if (PLAYER_VEHICLES[viewIndex].unlock > best) return;
     vehicleIndex = viewIndex;
+    mode = newMode === 'race' ? 'race' : 'endless';
     resetGame();
     state = 'playing';
     hideOverlay();
     sndStart();
-    showBanner('Level 1 · ' + ZONES[zoneNow].name, true);
+    if (mode === 'race') {
+      raceLevel = raceWon + 1;
+      level = raceLevel;
+      raceBase = 330 + Math.min(300, 14 * (raceLevel - 1));
+      raceLen = 22000 + 2500 * Math.min(raceLevel - 1, 8);
+      // the rival starts a little ahead, so the race begins as a chase
+      bot = { dist: 450, lane: 1, x: laneX(1), slow: 0, cool: 0, playerAhead: false,
+        speed: raceBase + 55 + Math.min(40, 5 * (raceLevel - 1)),
+        look: Math.min(240, 150 + 15 * raceLevel),
+        kind: ['racer', 'superc', 'rocket', 'gold'][(raceLevel - 1) % 4] };
+      showBanner(T('raceStart', { n: raceLevel }), true);
+    } else {
+      showBanner(T('level') + ' 1 · ' + zoneName(ZONES[zoneNow]), true, true);
+    }
+    updateHud(true);
     grantLevelGifts();
   }
 
   function pauseGame() {
     if (state !== 'playing') return;
     state = 'paused';
+    ptr = null;
     save('zzc_best', best);
     showOverlay('paused');
   }
@@ -691,18 +818,25 @@
     hideOverlay();
   }
 
+  // true while the end screen should throw a party
+  function celebrating() {
+    if (state !== 'over') return false;
+    return mode === 'race' ? raceResult === true : (score > 0 && score > bestAtStart);
+  }
+
   function endGame() {
     state = 'over';
+    ptr = null;
     overAt = performance.now();
     save('zzc_best', best);
     showOverlay('over');
-    if (score > bestAtStart && score > 0) sndHighScore(); else sndOver();
+    if (celebrating()) sndHighScore(); else sndOver();
   }
 
-  function pressPlay() {
+  function pressPlay(newMode) {
     if (state === 'paused') { resumeGame(); return; }
     if (state === 'over' && performance.now() - overAt < 600) return; // avoid accidental restart
-    if (state === 'menu' || state === 'over') startGame();
+    if (state === 'menu' || state === 'over') startGame(newMode);
   }
 
   function updateHud(force) {
@@ -714,17 +848,23 @@
       shownGold = hsHit;
       elScore.classList.toggle('gold', hsHit);
     }
-    if (force || hearts !== shownHearts || maxHearts !== shownMax) {
-      shownHearts = hearts;
-      shownMax = maxHearts;
-      var s = '';
-      for (var i = 0; i < maxHearts; i++) s += i < hearts ? '❤️' : '🤍';
-      elHearts.textContent = s;
-      elHearts.classList.toggle('small', maxHearts >= 5);
+    var h;
+    if (mode === 'race' && bot) {
+      h = distance >= bot.dist ? T('first') : T('second');     // your place in the race
+    } else {
+      h = '';
+      for (var i = 0; i < maxHearts; i++) h += i < hearts ? '❤️' : '🤍';
     }
-    if (force || level !== shownLevel) {
-      shownLevel = level;
-      elLevel.textContent = 'Level ' + level;
+    if (force || h !== shownHearts) {
+      shownHearts = h;
+      elHearts.textContent = h;
+      elHearts.classList.toggle('small', mode !== 'race' && maxHearts >= 5);
+    }
+    var kmh = Math.round(speed / 3 / 5) * 5;
+    var l = (mode === 'race' ? T('raceWord') + ' ' + raceLevel : T('level') + ' ' + level) + ' · ' + kmh + ' ' + T('kmh');
+    if (force || l !== shownLevel) {
+      shownLevel = l;
+      elLevel.textContent = l;
     }
   }
 
@@ -754,7 +894,7 @@
         // Let a focused picker or icon button handle its own click.
         var t = e.target;
         if (t && t !== playBtn && t.tagName === 'BUTTON') return;
-        pressPlay();
+        pressPlay('endless');
       }
       e.preventDefault();
     } else if (k === 'p' || k === 'P' || k === 'Escape') {
@@ -762,13 +902,29 @@
     }
   });
 
+  // Touch and mouse: a quick tap on the left or right side moves one lane,
+  // and sliding a finger sideways moves the car one lane per short slide.
   stage.addEventListener('pointerdown', function (e) {
     if (state !== 'playing') return;
     if (e.target && e.target.closest && e.target.closest('button')) return;
-    var r = stage.getBoundingClientRect();
-    steer((e.clientX - r.left) < r.width / 2 ? -1 : 1);
+    ptr = { id: e.pointerId, x: e.clientX, moved: false };
     e.preventDefault();
   });
+  window.addEventListener('pointermove', function (e) {
+    if (!ptr || e.pointerId !== ptr.id || state !== 'playing') return;
+    var step = Math.max(24, stage.getBoundingClientRect().width * 0.13);
+    while (e.clientX - ptr.x >= step) { steer(1); ptr.x += step; ptr.moved = true; }
+    while (ptr.x - e.clientX >= step) { steer(-1); ptr.x -= step; ptr.moved = true; }
+  });
+  window.addEventListener('pointerup', function (e) {
+    if (!ptr || e.pointerId !== ptr.id) return;
+    if (!ptr.moved && state === 'playing') {
+      var r = stage.getBoundingClientRect();
+      steer((e.clientX - r.left) < r.width / 2 ? -1 : 1);
+    }
+    ptr = null;
+  });
+  window.addEventListener('pointercancel', function () { ptr = null; });
 
   // Stop the page from scrolling / zooming while playing on phones.
   document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
@@ -776,7 +932,9 @@
   document.addEventListener('dblclick', function (e) { e.preventDefault(); });
   document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  playBtn.addEventListener('click', function () { pressPlay(); playBtn.blur(); });
+  playBtn.addEventListener('click', function () { pressPlay('endless'); playBtn.blur(); });
+  raceBtn.addEventListener('click', function () { pressPlay('race'); raceBtn.blur(); });
+  langBtn.addEventListener('click', function () { setLang(lang === 'en' ? 'el' : 'en'); langBtn.blur(); });
   pauseBtn.addEventListener('click', function () { pauseGame(); pauseBtn.blur(); });
   muteBtn.addEventListener('click', function () {
     muted = !muted;
@@ -800,7 +958,7 @@
     safeLane = clamp(safeLane + pick([-1, 0, 1]), 0, 2);
     var others = [0, 1, 2].filter(function (l) { return l !== safeLane; });
     if (Math.random() < 0.5) others.reverse();
-    var lvl = cp + 1;
+    var lvl = mode === 'race' ? Math.min(6, raceLevel + 1) : cp + 1;
 
     var blocked = [];
     if (elapsed > 1.5) {
@@ -879,7 +1037,7 @@
   }
 
   function applyPower(ptype) {
-    showBanner(POWER_INFO[ptype].label, false);
+    showBanner(T('p_' + ptype), false);
     if (ptype === 'nitro') { startNitro(nitroDur); return; }
     sndPower();
     if (ptype === 'shield') shield = true;
@@ -930,13 +1088,17 @@
       if (!announced && boundaryY >= player.y) {
         announced = true;
         zoneNow = zoneAbove;
-        level = cp + 1;
-        bonus += 40 + 10 * level;
-        showBanner('Level ' + level + ' · ' + ZONES[zoneNow].name, true);
-        confetti(player.x + offAt(player.y), player.y - 40, 26);
-        popup(player.x + offAt(player.y), player.y - 70, '+' + (40 + 10 * level));
         sndZone();
-        grantLevelGifts();
+        if (mode === 'race') {
+          showBanner(zoneName(ZONES[zoneNow]), true, true);
+        } else {
+          level = cp + 1;
+          bonus += 40 + 10 * level;
+          showBanner(T('level') + ' ' + level + ' · ' + zoneName(ZONES[zoneNow]), true, true);
+          confetti(player.x + offAt(player.y), player.y - 40, 26);
+          popup(player.x + offAt(player.y), player.y - 70, '+' + (40 + 10 * level));
+          grantLevelGifts();
+        }
       }
       if (boundaryY > H + 40) {
         transitioning = false;
@@ -950,20 +1112,20 @@
   }
 
   function checkRecords() {
-    if (score <= best) return;
+    if (mode === 'race' || score <= best) return;
     best = score;
     if (!hsHit && bestAtStart > 0) {
       hsHit = true;
       fireworksAt = clock;
-      showBanner('🏆 New high score!', true);
+      showBanner(T('newHigh'), true);
       confetti(W / 2, H * 0.45, 60);
       sndHighScore();
     }
     var n = countUnlocked(best);
     if (n > unlockCount) {
       for (var i = unlockCount; i < n; i++) {
-        runUnlocked.push(UNLOCKS[i].name);
-        showBanner('🔓 ' + UNLOCKS[i].name + ' unlocked!', true);
+        runUnlocked.push(UNLOCKS[i]);
+        showBanner(T('unlockedBanner', { n: unlockName(UNLOCKS[i]) }), true);
       }
       unlockCount = n;
       save('zzc_best', best);
@@ -991,6 +1153,7 @@
   function loseHeart(e, i) {
     hearts--;
     combo = 0;
+    starSpeed = Math.max(0, starSpeed - 30);
     invincible = 1.6;
     shake = 0.3;
     burst(sx(e), e.y, '#ffffff', 12);
@@ -999,11 +1162,56 @@
     entities.splice(i, 1);
   }
 
+  // In a race a bump costs speed instead of a heart.
+  function raceBump(e, i) {
+    combo = 0;
+    slow = 1;
+    raceBoost = Math.max(0, raceBoost - 30);
+    invincible = 1.4;
+    shake = 0.3;
+    burst(sx(e), e.y, '#ffffff', 12);
+    sndBump();
+    buzz(60);
+    entities.splice(i, 1);
+  }
+
+  // The rival: drives by itself, looks ahead and changes lane around obstacles.
+  function updateBot(dt) {
+    var b = bot, i, e, g;
+    var lead = b.dist - distance;
+    var rubber = lead > 700 ? 0.9 : (lead < -700 ? 1.08 : 1);   // keeps the race close
+    if (b.slow > 0) b.slow -= dt;
+    b.dist += b.speed * rubber * (b.slow > 0 ? 0.5 : 1) * dt;
+    b.cool -= dt;
+    var by = player.y - (b.dist - distance);
+    var blocked = [false, false, false];
+    for (i = 0; i < entities.length; i++) {
+      e = entities[i];
+      if ((e.type !== 'veh' && e.type !== 'block') || e.fling) continue;
+      g = by - e.y;                          // how far ahead of the rival it is
+      if (g > -100 && g < b.look) blocked[e.lane] = true;
+      if (Math.abs(e.x - b.x) < 46 && Math.abs(g) < (e.h + 96) / 2 - 10) {
+        fling(e);                            // the rival bumped: it slows down for a moment
+        b.slow = 1;
+      }
+    }
+    if (blocked[b.lane] && b.cool <= 0) {
+      var options = [];
+      if (b.lane > 0 && !blocked[b.lane - 1]) options.push(b.lane - 1);
+      if (b.lane < 2 && !blocked[b.lane + 1]) options.push(b.lane + 1);
+      if (options.length) { b.lane = pick(options); b.cool = 0.25; }
+    }
+    b.x += (laneX(b.lane) - b.x) * Math.min(1, dt * 12);
+  }
+
   function update(dt) {
     elapsed += dt;
-    // Every level is faster than the last, and speed creeps up inside a level too.
-    var base = 300 + Math.min(420, 45 * (cp + zoneProgress()));
-    speedMul += ((nitro > 0 ? 1.6 : 1) - speedMul) * Math.min(1, dt * 5);
+    // Speed grows with every level, inside each level, and with every star collected.
+    var base = mode === 'race'
+      ? raceBase + raceBoost
+      : 300 + Math.min(480, 45 * (cp + zoneProgress())) + starSpeed;
+    if (slow > 0) slow = Math.max(0, slow - dt);
+    speedMul += ((nitro > 0 ? 1.6 : (slow > 0 ? 0.5 : 1)) - speedMul) * Math.min(1, dt * 5);
     speed = base * speedMul;
     var dy = speed * dt;
     distance += dy;
@@ -1057,7 +1265,9 @@
           var pts = (10 + Math.min(combo - 1, 10)) * starMult * (dbl > 0 ? 2 : 1);
           bonus += pts;
           burst(ex, e.y, '#ffd21f', 10);
-          popup(ex, e.y - 20, combo > 0 && combo % 5 === 0 ? 'Combo ×' + combo + '!' : '+' + pts);
+          popup(ex, e.y - 20, combo % 5 === 0 ? T('combo', { n: combo }) : '+' + pts);
+          if (mode === 'race') raceBoost = Math.min(150, raceBoost + 6);
+          else starSpeed = Math.min(160, starSpeed + 1.2);
           sndStar();
           entities.splice(i, 1);
           continue;
@@ -1073,7 +1283,7 @@
         if (e.type === 'pad') {
           bonus += 10;
           startNitro(1.2);
-          popup(ex, e.y - 20, 'Zoom!');
+          popup(ex, e.y - 20, T('zoom'));
           entities.splice(i, 1);
           continue;
         }
@@ -1108,6 +1318,7 @@
             sndPop();
             continue;
           }
+          if (mode === 'race') { raceBump(e, i); continue; }
           loseHeart(e, i);
           if (hearts <= 0) {
             score = bonus + Math.floor(distance / 60);
@@ -1124,6 +1335,27 @@
 
     updateParticles(dt, dy);
     score = bonus + Math.floor(distance / 60);
+
+    if (mode === 'race') {
+      updateBot(dt);
+      var nowAhead = distance >= bot.dist;
+      if (nowAhead !== bot.playerAhead) {
+        bot.playerAhead = nowAhead;
+        showBanner(T(nowAhead ? 'passed' : 'overtaken'), false);
+        if (nowAhead) sndPower(); else sndWhoosh();
+      }
+      if (distance >= raceLen || bot.dist >= raceLen) {      // somebody crossed the finish line
+        raceResult = distance >= raceLen;
+        if (raceResult && raceLevel > raceWon) {
+          raceWon = raceLevel;
+          save('zzc_race', raceWon);
+        }
+        updateHud(false);
+        endGame();
+        return;
+      }
+    }
+
     checkRecords();
     updateHud(false);
   }
@@ -1681,21 +1913,70 @@
         ctx.fillRect(ROAD_X + LANE_W * 2 + off - 3, sy, 6, STRIP + 1);
       }
     }
-    if (transitioning) {
-      var bo = offAt(boundaryY);
-      for (var row = 0; row < 2; row++) {
-        for (i = 0; i < 30; i++) {
-          ctx.fillStyle = (i + row) % 2 ? '#1f2937' : '#ffffff';
-          ctx.fillRect(ROAD_X + bo + i * 10, boundaryY - 10 + row * 10, 10, 10);
-        }
+    if (transitioning) drawChecker(boundaryY, 2);
+    if (mode === 'race' && state !== 'menu') {
+      var fy = player.y - (raceLen - distance);     // the finish line
+      if (fy > -40 && fy < H + 40) drawChecker(fy, 4);
+    }
+  }
+
+  function drawChecker(y, rows) {
+    var bo = offAt(y);
+    for (var row = 0; row < rows; row++) {
+      for (var i = 0; i < 30; i++) {
+        ctx.fillStyle = (i + row) % 2 ? '#1f2937' : '#ffffff';
+        ctx.fillRect(ROAD_X + bo + i * 10, y - rows * 5 + row * 10, 10, 10);
       }
     }
+  }
+
+  function outlinedText(text, x, y, size) {
+    ctx.font = 'bold ' + size + 'px "Trebuchet MS", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(31,41,55,0.85)';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, x, y);
+  }
+
+  var RIVAL_COLOR = '#3d2c8d';
+  function drawBot() {
+    var by = player.y - (bot.dist - distance);
+    var metres = Math.round(Math.abs(bot.dist - distance) / 30);
+    if (by < -60) { outlinedText('▲ ' + T('rival') + ' ' + metres + ' m', W / 2, 128, 17); return; }
+    if (by > H + 60) { outlinedText('▼ ' + T('rival') + ' ' + metres + ' m', W / 2, H - 70, 17); return; }
+    var bx = bot.x + offAt(by);
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(angleAt(by) + (laneX(bot.lane) - bot.x) * 0.004);
+    if (bot.slow > 0 && Math.floor(bot.slow * 10) % 2 === 1) ctx.globalAlpha = 0.5;
+    drawVehicle(ctx, bot.kind, RIVAL_COLOR, true);
+    ctx.restore();
+    outlinedText(T('rival'), bx, by - 64, 14);
+  }
+
+  // Race progress: a little track with both cars and the finish flag
+  function drawRaceBar() {
+    var x0 = 84, x1 = W - 96, y = H - 30, i;
+    fillRR(ctx, 'rgba(0,0,0,0.4)', x0 - 10, y - 10, x1 - x0 + 34, 20, 10);
+    fillRR(ctx, '#ffffff', x0, y - 2, x1 - x0, 4, 2);
+    for (i = 0; i < 6; i++) {
+      ctx.fillStyle = (i + Math.floor(i / 2)) % 2 ? '#1f2937' : '#ffffff';
+      ctx.fillRect(x1 + 4 + (i % 2) * 6, y - 9 + Math.floor(i / 2) * 6, 6, 6);
+    }
+    var bp = clamp(bot.dist / raceLen, 0, 1), pp = clamp(distance / raceLen, 0, 1);
+    disc(ctx, RIVAL_COLOR, x0 + (x1 - x0) * bp, y, 6.5);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+    disc(ctx, CAR_COLORS[colorIndex], x0 + (x1 - x0) * pp, y, 8);
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
   }
 
   // ---------- Weather ----------
   // Stronger at higher levels, and it builds up and calms down inside each land.
   function weatherStrength() {
-    var byLevel = Math.min(1, 0.3 + 0.12 * (level - 1));
+    var byLevel = Math.min(1, 0.3 + 0.12 * ((mode === 'race' ? raceLevel : level) - 1));
     return byLevel * (0.35 + 0.65 * Math.sin(Math.PI * zoneProgress()));
   }
 
@@ -1819,7 +2100,7 @@
   // Celebration fireworks for a new high score
   function drawFireworks(t) {
     var since = t - fireworksAt;
-    var loop = state === 'over' && score > bestAtStart && score > 0 && bestAtStart > 0;
+    var loop = celebrating();
     if (!loop && (since < 0 || since > 4.5)) return;
     for (var k = 0; k < 6; k++) {
       var local = loop ? mod(t - k * 0.55, 3.3) : since - k * 0.55;
@@ -1907,6 +2188,8 @@
       ctx.restore();
     }
 
+    if (showPlayer && mode === 'race' && bot) drawBot();
+
     if (showPlayer) {
       var blink = invincible > 0 && state === 'playing' && Math.floor(invincible * 10) % 2 === 1;
       if (!blink) {
@@ -1982,7 +2265,10 @@
     }
 
     ctx.restore();
-    if (state === 'playing' || state === 'paused') drawTimers();
+    if (state === 'playing' || state === 'paused') {
+      drawTimers();
+      if (mode === 'race' && bot) drawRaceBar();
+    }
   }
 
   // ---------- Main loop ----------
@@ -2002,7 +2288,7 @@
         updateCamera(dt);
       } else if (state === 'over') {
         updateParticles(dt, 0);
-        if (score > bestAtStart && score > 0 && Math.random() < dt * 25) {   // confetti rain for a new best
+        if (celebrating() && Math.random() < dt * 25) {   // confetti rain for a new best or a race win
           particles.push({ x: rand(0, W), y: -10, vx: rand(-40, 40), vy: rand(60, 160), life: 2.6, max: 2.6,
             color: 'hsl(' + Math.floor(rand(0, 360)) + ',95%,62%)', r: rand(3, 6), g: 120, rect: true });
         }
@@ -2016,6 +2302,8 @@
 
   // ---------- Go ----------
   muteBtn.textContent = muted ? '🔇' : '🔊';
+  document.documentElement.lang = lang;
+  document.title = T('title').replace('🚗 ', '');
   buildPickers();
   resetGame();
   showOverlay('menu');
