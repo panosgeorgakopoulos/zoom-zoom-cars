@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4fb3ff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="description" content="Zoom Zoom Cars - a friendly car game for kids. Collect stars, grab nitro and drive through six lands!">
+<meta name="description" content="Zoom Zoom Cars - a friendly car game for kids. Collect stars, grab nitro, unlock super cars and drive through eight lands!">
 <title>Zoom Zoom Cars</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%97%3C/text%3E%3C/svg%3E">
 <style>
@@ -64,6 +64,18 @@
     box-shadow: 0 0.15em 0 rgba(0, 0, 0, 0.2);
     white-space: nowrap;
   }
+  #score.gold { background: #ffd21f; animation: pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: scale(1.1); } }
+  #hearts.small { font-size: 0.9em; }
+  #level {
+    position: absolute;
+    left: 0.6em;
+    top: calc(3.5em + env(safe-area-inset-top, 0px));
+    font-size: 0.9em;
+    background: rgba(31, 41, 55, 0.75);
+    color: #fff;
+    pointer-events: none;
+  }
   #hudButtons { display: flex; gap: 0.4em; }
   .iconBtn {
     pointer-events: auto;
@@ -81,14 +93,15 @@
 
   #banner {
     position: absolute;
-    top: 17%;
+    top: 19%;
     left: 50%;
+    max-width: 94%;
     transform: translate(-50%, -0.6em) scale(0.8);
     background: rgba(255, 255, 255, 0.95);
     color: #1f2937;
     border-radius: 999px;
-    padding: 0.3em 1em;
-    font-size: 1.5em;
+    padding: 0.3em 0.9em;
+    font-size: 1.35em;
     font-weight: bold;
     white-space: nowrap;
     box-shadow: 0 0.15em 0 rgba(0, 0, 0, 0.25);
@@ -122,8 +135,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.65em;
-    padding: 1.2em;
+    gap: 0.5em;
+    padding: 1em;
     text-align: center;
     background: rgba(20, 60, 110, 0.6);
     color: #fff;
@@ -131,14 +144,16 @@
   }
   #overlay h1 {
     margin: 0;
-    font-size: 2.3em;
+    font-size: 2.2em;
     line-height: 1.1;
     text-shadow: 0 0.08em 0 rgba(0, 0, 0, 0.3);
   }
-  #overlay p { margin: 0; font-size: 1.15em; line-height: 1.3; }
-  #scoreLine { font-size: 1.5em !important; font-weight: bold; }
+  #overlay p { margin: 0; font-size: 1.05em; line-height: 1.3; }
+  #scoreLine { font-size: 1.45em !important; font-weight: bold; }
+  #carName { font-size: 1.25em !important; font-weight: bold; }
   #trait { font-size: 1em !important; font-weight: bold; color: #ffe98a; min-height: 1.3em; }
-  #hint { font-size: 0.95em !important; opacity: 0.9; }
+  #nextLine { font-size: 0.95em !important; opacity: 0.95; }
+  #hint { font-size: 0.9em !important; opacity: 0.9; }
   #playBtn {
     border: none;
     border-radius: 999px;
@@ -146,25 +161,35 @@
     color: #1f2937;
     font-family: inherit;
     font-weight: bold;
-    font-size: 1.8em;
-    padding: 0.4em 1.4em;
+    font-size: 1.7em;
+    padding: 0.4em 1.3em;
     cursor: pointer;
     box-shadow: 0 0.22em 0 #c99a00;
   }
   #playBtn:active { transform: translateY(0.12em); box-shadow: 0 0.1em 0 #c99a00; }
-  #vehicles, #colors { display: flex; gap: 0.6em; justify-content: center; }
-  .veh {
-    width: 4.2em; height: 6.2em;
-    border-radius: 0.9em;
-    border: 0.2em solid rgba(255, 255, 255, 0.35);
-    background: rgba(255, 255, 255, 0.16);
+  #playBtn:disabled { background: #b8c0cc; box-shadow: 0 0.22em 0 #8892a0; cursor: default; }
+  #garage { display: flex; align-items: center; justify-content: center; gap: 0.7em; }
+  #carView {
+    width: 7em; height: 9em;
+    border-radius: 1em;
+    border: 0.2em solid #fff;
+    background: rgba(255, 255, 255, 0.28);
+  }
+  .navBtn {
+    width: 2.6em; height: 2.6em;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.92);
+    color: #1f2937;
+    font-size: 1.2em;
+    font-family: inherit;
     padding: 0;
     cursor: pointer;
+    box-shadow: 0 0.15em 0 rgba(0, 0, 0, 0.25);
   }
-  .veh canvas { display: block; width: 100%; height: 100%; }
-  .veh.on { border-color: #fff; background: rgba(255, 255, 255, 0.4); transform: scale(1.08); }
+  #colors { display: flex; gap: 0.6em; justify-content: center; }
   .swatch {
-    width: 2.6em; height: 2.6em;
+    width: 2.4em; height: 2.4em;
     border-radius: 50%;
     border: 0.22em solid rgba(255, 255, 255, 0.5);
     cursor: pointer;
@@ -187,6 +212,7 @@
       <button class="iconBtn" id="pauseBtn" aria-label="Pause">⏸</button>
     </div>
   </div>
+  <div class="pill" id="level">Level 1</div>
 
   <div id="banner"></div>
 
@@ -195,13 +221,19 @@
 
   <div id="overlay">
     <h1 id="title">🚗 Zoom Zoom Cars</h1>
-    <p id="message">Collect ⭐ stars and power-ups!<br>Steer around cones and traffic.</p>
+    <p id="message">Collect ⭐ stars and power-ups!<br>Steer around traffic on the twisty road.</p>
     <p id="scoreLine" class="hidden"></p>
-    <div id="vehicles"></div>
+    <div id="garage">
+      <button class="navBtn" id="prevBtn" aria-label="Previous vehicle">◀</button>
+      <canvas id="carView" width="168" height="216"></canvas>
+      <button class="navBtn" id="nextBtn" aria-label="Next vehicle">▶</button>
+    </div>
+    <p id="carName"></p>
     <p id="trait"></p>
     <div id="colors"></div>
     <button id="playBtn">▶ Play</button>
-    <p id="hint">Tap the left or right side to steer<br>or use the ← → arrow keys</p>
+    <p id="nextLine"></p>
+    <p id="hint">Tap the left or right side to steer · or use ← → keys</p>
   </div>
 </div>
 
@@ -211,48 +243,67 @@
 
   // ---------- Constants ----------
   var W = 400, H = 640;            // H changes with the screen shape
-  var ROAD_X = 50, LANE_W = 100;
-  var ZONE_LEN = 9000;             // road length of each land, in pixels
-  var SCENERY_COUNT = 16, SCENERY_GAP = 72;
+  var ROAD_X = 50, LANE_W = 100, ROAD_W = 300;
+  var ZONE_BASE = 9000;            // road length of the first land, in pixels
+  var SCENERY_COUNT = 24, SCENERY_GAP = 48;
+  var STRIP = 6;                   // the bendy road is drawn in thin strips
   var CAR_COLORS = ['#e53935', '#1e88e5', '#43a047', '#8e24aa'];
   var TRAFFIC_COLORS = ['#fb8c00', '#00acc1', '#f06292', '#7cb342', '#5c6bc0', '#26a69a'];
 
   // Sizes of every vehicle (top-down, nose pointing up)
   var VEH = {
-    car:     { w: 54, h: 92 },
-    taxi:    { w: 54, h: 92 },
-    racer:   { w: 54, h: 98 },
-    pickup:  { w: 56, h: 100 },
-    monster: { w: 60, h: 96 },
-    van:     { w: 56, h: 104 },
-    truck:   { w: 58, h: 136 },
-    bus:     { w: 58, h: 136 }
+    car:       { w: 54, h: 92 },
+    taxi:      { w: 54, h: 92 },
+    gold:      { w: 56, h: 94 },
+    racer:     { w: 54, h: 98 },
+    pickup:    { w: 56, h: 100 },
+    monster:   { w: 60, h: 96 },
+    superc:    { w: 58, h: 96 },
+    rocket:    { w: 54, h: 104 },
+    firetruck: { w: 58, h: 124 },
+    van:       { w: 56, h: 104 },
+    truck:     { w: 58, h: 136 },
+    bus:       { w: 58, h: 136 }
   };
 
-  // Vehicles the player can choose, each with one special skill
+  // Vehicles the player can drive. "unlock" is the best score needed.
   var PLAYER_VEHICLES = [
-    { kind: 'car',     name: 'City Car',      trait: '🧲 Magnets last longer' },
-    { kind: 'racer',   name: 'Racing Car',    trait: '⚡ Nitro lasts longer' },
-    { kind: 'pickup',  name: 'Pickup Truck',  trait: '❤️ One extra heart' },
-    { kind: 'monster', name: 'Monster Truck', trait: '💥 Squashes cones' }
+    { kind: 'car',       name: 'City Car',        unlock: 0,    hearts: 3, trait: '🧲 Magnets last longer' },
+    { kind: 'pickup',    name: 'Pickup Truck',    unlock: 0,    hearts: 4, trait: '❤️ One extra heart' },
+    { kind: 'racer',     name: 'Racing Car',      unlock: 250,  hearts: 3, trait: '⚡ Nitro lasts longer' },
+    { kind: 'monster',   name: 'Monster Truck',   unlock: 500,  hearts: 3, trait: '💥 Squashes things on the road' },
+    { kind: 'superc',    name: 'Thunder Bolt',    unlock: 900,  hearts: 3, trait: '⚡ Free nitro every level' },
+    { kind: 'firetruck', name: 'Rescue Truck',    unlock: 1400, hearts: 5, trait: '❤️ Five hearts' },
+    { kind: 'rocket',    name: 'Rocket Car',      unlock: 2000, hearts: 3, trait: '🛡️ Free shield every level' },
+    { kind: 'gold',      name: 'Golden Champion', unlock: 3000, hearts: 4, trait: '⭐ Every star counts double' }
   ];
   var TRAFFIC_KINDS = ['car', 'car', 'taxi', 'racer', 'pickup', 'van', 'truck', 'bus'];
 
-  // The lands you drive through, in order (then they repeat)
+  // The lands. Lands with "unlock" join the journey once that best score is reached.
   var ZONES = [
-    { name: '🌳 Sunny Meadow', left: '#5cc24a', right: '#5cc24a', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff5a5a',
-      sceneL: ['tree', 'tree', 'bush', 'flowers'], sceneR: ['tree', 'tree', 'bush', 'flowers'] },
-    { name: '🌵 Desert Dunes', left: '#e8c170', right: '#e8c170', road: '#6b6257', dash: '#fff3d6', kerbA: '#ffffff', kerbB: '#e07b39',
-      sceneL: ['cactus', 'cactus', 'rock'], sceneR: ['cactus', 'rock', 'cactus'] },
-    { name: '❄️ Snowy Peaks', left: '#eef6fb', right: '#eef6fb', road: '#6a7482', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#4aa3df',
-      sceneL: ['pine', 'pine', 'snowman'], sceneR: ['pine', 'snowman', 'pine'] },
-    { name: '🏖️ Sunny Beach', left: '#f4dc9a', right: '#39b6e6', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff9f1c',
-      sceneL: ['palm', 'palm', 'parasol'], sceneR: ['boat', 'buoy', 'wave', 'wave'] },
-    { name: '🌙 Night City', left: '#27304a', right: '#27304a', road: '#3a4152', dash: '#ffe98a', kerbA: '#cfd6e6', kerbB: '#7b61ff', dark: true,
-      sceneL: ['building', 'building', 'lamp'], sceneR: ['building', 'lamp', 'building'] },
-    { name: '🚀 Rainbow Space', left: '#1b1140', right: '#1b1140', road: '#2b2060', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#ff5ad1', dark: true, rainbow: true,
-      sceneL: ['planet', 'twinkle', 'twinkle'], sceneR: ['twinkle', 'planet', 'twinkle'] }
+    { name: '🌳 Sunny Meadow', unlock: 0, left: '#5cc24a', right: '#5cc24a', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff5a5a',
+      weather: 'petals', block: 'cone', sceneL: ['tree', 'tree', 'bush', 'flowers'], sceneR: ['tree', 'tree', 'bush', 'flowers'] },
+    { name: '🌵 Desert Dunes', unlock: 0, left: '#e8c170', right: '#e8c170', road: '#6b6257', dash: '#fff3d6', kerbA: '#ffffff', kerbB: '#e07b39',
+      weather: 'sand', block: 'tumble', sceneL: ['cactus', 'cactus', 'rock'], sceneR: ['cactus', 'rock', 'cactus'] },
+    { name: '❄️ Snowy Peaks', unlock: 0, left: '#eef6fb', right: '#eef6fb', road: '#6a7482', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#4aa3df',
+      weather: 'snow', block: 'snowball', sceneL: ['pine', 'pine', 'snowman'], sceneR: ['pine', 'snowman', 'pine'] },
+    { name: '🏖️ Sunny Beach', unlock: 0, left: '#f4dc9a', right: '#39b6e6', road: '#5b6470', dash: '#f5f5f5', kerbA: '#ffffff', kerbB: '#ff9f1c',
+      weather: 'gulls', block: 'ball', sceneL: ['palm', 'palm', 'parasol'], sceneR: ['boat', 'buoy', 'wave', 'wave'] },
+    { name: '🌙 Night City', unlock: 400, left: '#27304a', right: '#27304a', road: '#3a4152', dash: '#ffe98a', kerbA: '#cfd6e6', kerbB: '#7b61ff', dark: true,
+      weather: 'rain', block: 'barrier', sceneL: ['building', 'building', 'lamp'], sceneR: ['building', 'lamp', 'building'] },
+    { name: '🚀 Rainbow Space', unlock: 800, left: '#1b1140', right: '#1b1140', road: '#2b2060', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#ff5ad1', dark: true, rainbow: true,
+      weather: 'meteors', block: 'asteroid', sceneL: ['planet', 'twinkle', 'twinkle'], sceneR: ['twinkle', 'planet', 'twinkle'] },
+    { name: '🌋 Volcano Valley', unlock: 1300, left: '#3b2a2a', right: '#3b2a2a', road: '#4d4343', dash: '#ffb347', kerbA: '#2a1d1d', kerbB: '#ff5a1f', dark: true,
+      weather: 'embers', block: 'lavarock', sceneL: ['volcano', 'lavapool', 'darkrock'], sceneR: ['lavapool', 'darkrock', 'volcano'] },
+    { name: '🍭 Candy Land', unlock: 1800, left: '#ffc9e3', right: '#c9f0ff', road: '#7d5ba6', dash: '#ffffff', kerbA: '#ffffff', kerbB: '#ff5c8a',
+      weather: 'sprinkles', block: 'donut', sceneL: ['lollipop', 'cupcake', 'cane'], sceneR: ['cupcake', 'lollipop', 'cane'] }
   ];
+
+  // Everything that can be unlocked, in order of the score needed
+  var UNLOCKS = [];
+  PLAYER_VEHICLES.forEach(function (v) { if (v.unlock > 0) UNLOCKS.push({ score: v.unlock, name: v.name }); });
+  ZONES.forEach(function (z) { if (z.unlock > 0) UNLOCKS.push({ score: z.unlock, name: z.name }); });
+  UNLOCKS.sort(function (a, b) { return a.score - b.score; });
 
   var POWER_INFO = {
     nitro:  { color: '#ff6b00', label: '⚡ Nitro!' },
@@ -262,26 +313,22 @@
     heart:  { color: '#ff5c8a', label: '❤️ Extra heart!' }
   };
 
+  // Fixed random numbers so weather can be drawn from the clock alone
+  var RN = [];
+  for (var ri = 0; ri < 480; ri++) RN.push(Math.random());
+
   // ---------- Elements ----------
-  var stage = document.getElementById('stage');
-  var canvas = document.getElementById('game');
+  function $(id) { return document.getElementById(id); }
+  var stage = $('stage');
+  var canvas = $('game');
   var ctx = canvas.getContext('2d');
-  var elScore = document.getElementById('score');
-  var elHearts = document.getElementById('hearts');
-  var elBanner = document.getElementById('banner');
-  var elOverlay = document.getElementById('overlay');
-  var elTitle = document.getElementById('title');
-  var elMessage = document.getElementById('message');
-  var elScoreLine = document.getElementById('scoreLine');
-  var elVehicles = document.getElementById('vehicles');
-  var elTrait = document.getElementById('trait');
-  var elColors = document.getElementById('colors');
-  var elHint = document.getElementById('hint');
-  var playBtn = document.getElementById('playBtn');
-  var pauseBtn = document.getElementById('pauseBtn');
-  var muteBtn = document.getElementById('muteBtn');
-  var arrowL = document.getElementById('arrowL');
-  var arrowR = document.getElementById('arrowR');
+  var elScore = $('score'), elHearts = $('hearts'), elLevel = $('level'), elBanner = $('banner');
+  var elOverlay = $('overlay'), elTitle = $('title'), elMessage = $('message'), elScoreLine = $('scoreLine');
+  var elGarage = $('garage'), carView = $('carView'), elCarName = $('carName'), elTrait = $('trait');
+  var elColors = $('colors'), elNextLine = $('nextLine'), elHint = $('hint');
+  var playBtn = $('playBtn'), pauseBtn = $('pauseBtn'), muteBtn = $('muteBtn');
+  var prevBtn = $('prevBtn'), nextBtn = $('nextBtn');
+  var arrowL = $('arrowL'), arrowR = $('arrowR');
 
   // ---------- Safe storage ----------
   function load(key, fallback) {
@@ -301,29 +348,56 @@
   // ---------- State ----------
   var state = 'menu'; // menu | playing | paused | over
   var best = parseInt(load('zzc_best', '0'), 10) || 0;
+  if (best < 0) best = 0;
   var muted = load('zzc_muted', '0') === '1';
   var colorIndex = loadIndex('zzc_color', CAR_COLORS.length);
-  var vehicleIndex = loadIndex('zzc_vehicle', PLAYER_VEHICLES.length);
+  var vehicleIndex = loadIndex('zzc_vehicle2', PLAYER_VEHICLES.length);
+  if (PLAYER_VEHICLES[vehicleIndex].unlock > best) vehicleIndex = 0;
+  var viewIndex = vehicleIndex;
 
   var player = { kind: 'car', lane: 1, x: laneX(1), y: H - 130, w: 54, h: 92 };
-  var entities = [];
-  var particles = [];
-  var scenery = [];
-  var flakes = [];
-  var elapsed = 0, distance = 0, bonus = 0, score = 0;
+  var entities = [], particles = [], popups = [], scenery = [];
+  var elapsed = 0, distance = 0, bonus = 0, score = 0, combo = 0;
   var hearts = 3, maxHearts = 3;
-  var speed = 280, speedMul = 1, roadOffset = 0, rowTimer = 0, safeLane = 1, rowsSincePower = 0;
-  var invincible = 0, shake = 0, overAt = 0;
-  var nitro = 0, magnet = 0, dbl = 0, shield = false;
-  var nitroDur = 3, magnetDur = 7, dblDur = 8, squash = false;
-  var zoneBelow = 0, zoneAbove = 0, zoneNow = 0, transitioning = false, announced = true, boundaryY = 0, nextZoneAt = ZONE_LEN, zonesSeen = 1;
-  var scaleX = 1, scaleY = 1;
-  var lastTime = 0, bannerTimer = 0;
-  var shownScore = -1, shownHearts = -1, shownMax = -1;
+  var speed = 300, speedMul = 1, rowTimer = 0, safeLane = 1, rowsSincePower = 0;
+  var invincible = 0, shake = 0, overAt = 0, camX = 0, clock = 0;
+  var nitro = 0, nitroFull = 3, magnet = 0, dbl = 0, shield = false;
+  var nitroDur = 3, magnetDur = 7, dblDur = 8, squash = false, starMult = 1, freeNitro = false, freeShield = false;
+  // lands and levels
+  var seq = [0, 1, 2, 3], seqPos = 0, cp = 0, level = 1;
+  var zoneBelow = 0, zoneAbove = 0, zoneNow = 0, transitioning = false, announced = true, boundaryY = 0;
+  var zoneStart = 0, nextZoneAt = ZONE_BASE;
+  // high score and unlocks
+  var bestAtStart = 0, hsHit = false, unlockCount = 0, runUnlocked = [], fireworksAt = -99;
+  // banner queue
+  var bannerQueue = [], bannerFreeAt = 0, bannerTimer = 0;
+
+  var scaleX = 1, scaleY = 1, lastTime = 0;
+  var shownScore = -1, shownHearts = -1, shownMax = -1, shownLevel = -1, shownGold = null;
+  var stripOff = [];
 
   function laneX(i) { return ROAD_X + LANE_W * i + LANE_W / 2; }
   function rand(a, b) { return a + Math.random() * (b - a); }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function mod(a, n) { return ((a % n) + n) % n; }
+
+  // ---------- The bendy road ----------
+  // curve(worldY) is how far the road centre has swung sideways at that point.
+  function curve(wy) {
+    var amp = clamp((wy - 1200) / 120, 0, 130);
+    return amp * (Math.sin(wy / 700) * 0.6 + Math.sin(wy / 310 + 1) * 0.4);
+  }
+  function worldY(sy) { return distance + player.y - sy; }
+  function offAt(sy) { return curve(worldY(sy)) - camX; }
+  function angleAt(sy) {
+    var wy = worldY(sy);
+    return Math.atan((curve(wy + 6) - curve(wy - 6)) / 12);
+  }
+  function updateCamera(dt) {
+    var target = curve(distance) + (player.x - W / 2) * 0.35;
+    camX += (target - camX) * Math.min(1, dt * 4.5);
+  }
 
   // ---------- Sound ----------
   var actx = null;
@@ -350,26 +424,66 @@
       o.stop(t + dur + 0.02);
     } catch (e) { /* sound is optional */ }
   }
-  function sndStar() { beep(880, 0.1, 'sine', 0.12); beep(1320, 0.15, 'sine', 0.12, null, 0.08); }
+  function tune(notes, type, vol, step) {
+    for (var i = 0; i < notes.length; i++) beep(notes[i], i === notes.length - 1 ? 0.3 : 0.12, type, vol, null, i * step);
+  }
+  function sndStar() { beep(880 + Math.min(combo, 10) * 30, 0.1, 'sine', 0.12); beep(1320 + Math.min(combo, 10) * 30, 0.15, 'sine', 0.12, null, 0.08); }
+  function sndGem() { tune([1047, 1319, 1568, 2093], 'sine', 0.1, 0.06); }
   function sndBump() { beep(220, 0.25, 'triangle', 0.2, 90); }
   function sndMove() { beep(520, 0.05, 'sine', 0.05); }
-  function sndStart() { beep(523, 0.1, 'square', 0.06); beep(659, 0.1, 'square', 0.06, null, 0.1); beep(784, 0.18, 'square', 0.06, null, 0.2); }
-  function sndOver() { beep(659, 0.15, 'sine', 0.12); beep(523, 0.15, 'sine', 0.12, null, 0.15); beep(784, 0.3, 'sine', 0.12, null, 0.3); }
+  function sndStart() { tune([523, 659, 784], 'square', 0.06, 0.1); }
+  function sndOver() { tune([659, 523, 784], 'sine', 0.12, 0.15); }
   function sndNitro() { beep(180, 0.5, 'sawtooth', 0.08, 900); }
-  function sndPower() { beep(523, 0.09, 'sine', 0.12); beep(784, 0.09, 'sine', 0.12, null, 0.08); beep(1047, 0.16, 'sine', 0.12, null, 0.16); }
+  function sndPower() { tune([523, 784, 1047], 'sine', 0.12, 0.08); }
   function sndWhoosh() { beep(700, 0.18, 'triangle', 0.1, 250); }
   function sndPop() { beep(400, 0.12, 'square', 0.07, 900); }
-  function sndZone() { beep(523, 0.12, 'triangle', 0.12); beep(659, 0.12, 'triangle', 0.12, null, 0.12); beep(784, 0.12, 'triangle', 0.12, null, 0.24); beep(1047, 0.3, 'triangle', 0.12, null, 0.36); }
+  function sndZone() { tune([523, 659, 784, 1047], 'triangle', 0.12, 0.12); }
+  function sndUnlock() { tune([784, 988, 1175, 1568], 'square', 0.06, 0.1); }
+  function sndHighScore() { tune([523, 659, 784, 1047, 784, 1047, 1319], 'triangle', 0.13, 0.11); }
   function buzz(ms) {
-    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* optional */ }
+    try {
+      var ua = navigator.userActivation;
+      if (navigator.vibrate && (!ua || ua.hasBeenActive)) navigator.vibrate(ms);
+    } catch (e) { /* optional */ }
   }
 
   // ---------- Banner ----------
-  function showBanner(text) {
+  function putBanner(text) {
     elBanner.textContent = text;
     elBanner.classList.add('show');
     window.clearTimeout(bannerTimer);
-    bannerTimer = window.setTimeout(function () { elBanner.classList.remove('show'); }, 1700);
+    bannerTimer = window.setTimeout(function () { elBanner.classList.remove('show'); }, 1500);
+  }
+  // Important banners wait their turn; small ones only show when nothing else is up.
+  function showBanner(text, important) {
+    if (important) {
+      // a newer level banner replaces one that is still waiting
+      if (text.indexOf('Level ') === 0) {
+        bannerQueue = bannerQueue.filter(function (b) { return b.indexOf('Level ') !== 0; });
+      }
+      if (bannerQueue.length < 4) bannerQueue.push(text);
+    } else if (!bannerQueue.length && performance.now() >= bannerFreeAt) {
+      putBanner(text);
+    }
+  }
+  function pumpBanners(now) {
+    if (bannerQueue.length && now >= bannerFreeAt && state === 'playing') {
+      putBanner(bannerQueue.shift());
+      bannerFreeAt = now + 1700;
+    }
+  }
+
+  // ---------- Unlocks ----------
+  function countUnlocked(b) {
+    var n = 0;
+    for (var i = 0; i < UNLOCKS.length; i++) if (UNLOCKS[i].score <= b) n++;
+    return n;
+  }
+  function nextUnlockText() {
+    for (var i = 0; i < UNLOCKS.length; i++) {
+      if (UNLOCKS[i].score > best) return '🔓 Next unlock at ' + UNLOCKS[i].score + ' ⭐: ' + UNLOCKS[i].name;
+    }
+    return '🏆 Everything is unlocked!';
   }
 
   // ---------- Setup ----------
@@ -384,14 +498,12 @@
       var left = i % 2 === 0;
       scenery.push({
         left: left,
-        x: left ? rand(20, 30) : rand(W - 30, W - 20),
-        y: i * SCENERY_GAP - 120 + rand(-12, 12),
-        type: sceneType(0, left),
+        dist: (i % 4 < 2) ? rand(20, 30) : rand(66, 84),   // a near row and a far row
+        y: i * SCENERY_GAP - 160 + rand(-8, 8),
+        type: sceneType(zoneAbove, left),
         s: Math.random()
       });
     }
-    flakes = [];
-    for (var k = 0; k < 45; k++) flakes.push({ x: rand(0, W), y: rand(0, 900), r: rand(1.5, 3.5), v: rand(40, 110) });
   }
 
   function applyVehicle() {
@@ -399,64 +511,79 @@
     player.kind = v.kind;
     player.w = VEH[v.kind].w;
     player.h = VEH[v.kind].h;
-    maxHearts = v.kind === 'pickup' ? 4 : 3;
+    maxHearts = v.hearts;
     nitroDur = v.kind === 'racer' ? 4.5 : 3;
     magnetDur = v.kind === 'car' ? 11 : 7;
     squash = v.kind === 'monster';
+    freeNitro = v.kind === 'superc';
+    freeShield = v.kind === 'rocket';
+    starMult = v.kind === 'gold' ? 2 : 1;
   }
+
+  function zoneLenFor(n) { return Math.min(18000, ZONE_BASE + 1500 * n); }
 
   function resetGame() {
     applyVehicle();
-    entities = [];
-    particles = [];
-    elapsed = 0; distance = 0; bonus = 0; score = 0; hearts = maxHearts;
-    speed = 280; speedMul = 1; rowTimer = 220; safeLane = 1; rowsSincePower = 3;
-    invincible = 0; shake = 0;
+    entities = []; particles = []; popups = [];
+    elapsed = 0; distance = 0; bonus = 0; score = 0; combo = 0; hearts = maxHearts;
+    speed = 300; speedMul = 1; rowTimer = 220; safeLane = 1; rowsSincePower = 3;
+    invincible = 0; shake = 0; camX = 0;
     nitro = 0; magnet = 0; dbl = 0; shield = false;
-    zoneBelow = 0; zoneAbove = 0; zoneNow = 0; transitioning = false; announced = true;
-    nextZoneAt = ZONE_LEN; zonesSeen = 1;
+    // the journey: every land unlocked so far, in order
+    seq = [];
+    for (var i = 0; i < ZONES.length; i++) if (ZONES[i].unlock <= best) seq.push(i);
+    seqPos = 0; cp = 0; level = 1;
+    zoneBelow = seq[0]; zoneAbove = seq[0]; zoneNow = seq[0];
+    transitioning = false; announced = true;
+    zoneStart = 0; nextZoneAt = zoneLenFor(0);
+    bestAtStart = best; hsHit = false; fireworksAt = -99;
+    unlockCount = countUnlocked(best); runUnlocked = [];
+    bannerQueue = []; bannerFreeAt = 0;
     player.lane = 1;
     player.x = laneX(1);
     initScenery();
     updateHud(true);
   }
 
-  function drawThumbs() {
-    var buttons = elVehicles.children;
-    for (var i = 0; i < buttons.length; i++) {
-      var cv = buttons[i].firstChild;
-      var c = cv.getContext('2d');
-      c.setTransform(1, 0, 0, 1, 0, 0);
-      c.clearRect(0, 0, cv.width, cv.height);
-      c.setTransform(1.15, 0, 0, 1.15, cv.width / 2, cv.height / 2);
-      drawVehicle(c, PLAYER_VEHICLES[i].kind, CAR_COLORS[colorIndex], true);
+  // ---------- Garage (vehicle picker) ----------
+  function drawGarage() {
+    var v = PLAYER_VEHICLES[viewIndex];
+    var locked = v.unlock > best;
+    var c = carView.getContext('2d');
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, carView.width, carView.height);
+    c.setTransform(1.45, 0, 0, 1.45, carView.width / 2, carView.height / 2);
+    c.globalAlpha = locked ? 0.3 : 1;
+    drawVehicle(c, v.kind, CAR_COLORS[colorIndex], true);
+    c.globalAlpha = 1;
+    if (locked) {
+      c.strokeStyle = '#ffffff'; c.lineWidth = 6;
+      c.beginPath(); c.arc(0, -6, 11, Math.PI, 0); c.stroke();
+      fillRR(c, '#ffffff', -18, -6, 36, 28, 6);
+      disc(c, '#1f2937', 0, 6, 4);
+      c.fillStyle = '#1f2937'; c.fillRect(-1.5, 6, 3, 9);
+    }
+    elCarName.textContent = v.name;
+    elTrait.textContent = locked ? '🔒 Score ' + v.unlock + ' ⭐ to unlock' : v.trait;
+    if (state !== 'paused') {
+      playBtn.disabled = locked;
+      playBtn.textContent = locked ? '🔒 Locked' : (state === 'over' ? '▶ Play again' : '▶ Play');
     }
   }
 
-  function showTrait() {
-    var v = PLAYER_VEHICLES[vehicleIndex];
-    elTrait.textContent = v.name + ': ' + v.trait;
+  function turnGarage(dir) {
+    viewIndex = mod(viewIndex + dir, PLAYER_VEHICLES.length);
+    if (PLAYER_VEHICLES[viewIndex].unlock <= best) {
+      vehicleIndex = viewIndex;
+      save('zzc_vehicle2', vehicleIndex);
+    }
+    drawGarage();
+    beep(660, 0.08, 'sine', 0.08);
   }
 
   function buildPickers() {
-    PLAYER_VEHICLES.forEach(function (v, i) {
-      var b = document.createElement('button');
-      b.className = 'veh' + (i === vehicleIndex ? ' on' : '');
-      b.setAttribute('aria-label', v.name);
-      var cv = document.createElement('canvas');
-      cv.width = 96; cv.height = 142;
-      b.appendChild(cv);
-      b.addEventListener('click', function () {
-        vehicleIndex = i;
-        save('zzc_vehicle', i);
-        var all = elVehicles.children;
-        for (var k = 0; k < all.length; k++) all[k].classList.toggle('on', k === i);
-        showTrait();
-        applyVehicle();
-        beep(660, 0.08, 'sine', 0.08);
-      });
-      elVehicles.appendChild(b);
-    });
+    prevBtn.addEventListener('click', function () { turnGarage(-1); });
+    nextBtn.addEventListener('click', function () { turnGarage(1); });
     CAR_COLORS.forEach(function (col, i) {
       var b = document.createElement('button');
       b.className = 'swatch' + (i === colorIndex ? ' on' : '');
@@ -467,13 +594,12 @@
         save('zzc_color', i);
         var all = elColors.children;
         for (var k = 0; k < all.length; k++) all[k].classList.toggle('on', k === i);
-        drawThumbs();
+        drawGarage();
         beep(660, 0.08, 'sine', 0.08);
       });
       elColors.appendChild(b);
     });
-    drawThumbs();
-    showTrait();
+    drawGarage();
   }
 
   function resize() {
@@ -500,31 +626,37 @@
   function showOverlay(kind) {
     elOverlay.classList.remove('hidden');
     var showPicker = kind !== 'paused';
-    elVehicles.classList.toggle('hidden', !showPicker);
+    elGarage.classList.toggle('hidden', !showPicker);
+    elCarName.classList.toggle('hidden', !showPicker);
     elTrait.classList.toggle('hidden', !showPicker);
     elColors.classList.toggle('hidden', !showPicker);
+    elNextLine.classList.toggle('hidden', !showPicker);
     elHint.classList.toggle('hidden', kind !== 'menu');
     elScoreLine.classList.toggle('hidden', kind !== 'over');
     elMessage.classList.toggle('hidden', kind === 'paused');
     if (kind === 'menu') {
       elTitle.textContent = '🚗 Zoom Zoom Cars';
-      elMessage.innerHTML = 'Collect ⭐ stars and power-ups!<br>Steer around cones and traffic.';
-      playBtn.textContent = '▶ Play';
+      elMessage.innerHTML = 'Collect ⭐ stars and power-ups!<br>Steer around traffic on the twisty road.';
+      elNextLine.textContent = (best > 0 ? 'Best: ' + best + ' ⭐ · ' : '') + nextUnlockText();
     } else if (kind === 'paused') {
       elTitle.textContent = '⏸ Paused';
+      playBtn.disabled = false;
       playBtn.textContent = '▶ Keep going';
     } else {
-      var isBest = score > 0 && score >= best;
-      elTitle.textContent = '🏁 Great driving!';
-      elScoreLine.textContent = 'You scored ' + score + ' ⭐';
-      elMessage.textContent = (isBest ? '🎉 New best score! 🎉' : 'Best score: ' + best) +
-        ' · Lands visited: ' + zonesSeen;
-      playBtn.textContent = '▶ Play again';
+      var isBest = score > 0 && score > bestAtStart;
+      elTitle.textContent = isBest ? '🏆 New high score!' : '🏁 Great driving!';
+      elScoreLine.textContent = score + ' ⭐ · Level ' + level;
+      elMessage.textContent = runUnlocked.length
+        ? '🔓 Unlocked: ' + runUnlocked.join(', ') + '!'
+        : (isBest ? 'Your best drive ever! 🎉' : 'Best score: ' + best + ' ⭐');
+      elNextLine.textContent = nextUnlockText();
     }
+    if (showPicker) drawGarage();
     elBanner.classList.remove('show');
     arrowL.classList.add('hidden');
     arrowR.classList.add('hidden');
     pauseBtn.classList.add('hidden');
+    elLevel.classList.toggle('hidden', kind === 'menu');
   }
 
   function hideOverlay() {
@@ -532,19 +664,24 @@
     arrowL.classList.remove('hidden');
     arrowR.classList.remove('hidden');
     pauseBtn.classList.remove('hidden');
+    elLevel.classList.remove('hidden');
   }
 
   function startGame() {
+    if (PLAYER_VEHICLES[viewIndex].unlock > best) return;
+    vehicleIndex = viewIndex;
     resetGame();
     state = 'playing';
     hideOverlay();
     sndStart();
-    showBanner(ZONES[0].name);
+    showBanner('Level 1 · ' + ZONES[zoneNow].name, true);
+    grantLevelGifts();
   }
 
   function pauseGame() {
     if (state !== 'playing') return;
     state = 'paused';
+    save('zzc_best', best);
     showOverlay('paused');
   }
 
@@ -557,12 +694,9 @@
   function endGame() {
     state = 'over';
     overAt = performance.now();
-    if (score > best) {
-      best = score;
-      save('zzc_best', best);
-    }
+    save('zzc_best', best);
     showOverlay('over');
-    sndOver();
+    if (score > bestAtStart && score > 0) sndHighScore(); else sndOver();
   }
 
   function pressPlay() {
@@ -576,19 +710,28 @@
       shownScore = score;
       elScore.textContent = '⭐ ' + score;
     }
+    if (force || hsHit !== shownGold) {
+      shownGold = hsHit;
+      elScore.classList.toggle('gold', hsHit);
+    }
     if (force || hearts !== shownHearts || maxHearts !== shownMax) {
       shownHearts = hearts;
       shownMax = maxHearts;
       var s = '';
       for (var i = 0; i < maxHearts; i++) s += i < hearts ? '❤️' : '🤍';
       elHearts.textContent = s;
+      elHearts.classList.toggle('small', maxHearts >= 5);
+    }
+    if (force || level !== shownLevel) {
+      shownLevel = level;
+      elLevel.textContent = 'Level ' + level;
     }
   }
 
   // ---------- Input ----------
   function steer(dir) {
     if (state !== 'playing') return;
-    var next = Math.max(0, Math.min(2, player.lane + dir));
+    var next = clamp(player.lane + dir, 0, 2);
     if (next !== player.lane) {
       player.lane = next;
       sndMove();
@@ -597,10 +740,15 @@
 
   window.addEventListener('keydown', function (e) {
     var k = e.key;
-    if (k === 'ArrowLeft' || k === 'a' || k === 'A') { steer(-1); e.preventDefault(); }
-    else if (k === 'ArrowRight' || k === 'd' || k === 'D') { steer(1); e.preventDefault(); }
-    else if (k === 'ArrowUp' || k === 'ArrowDown') { e.preventDefault(); }
-    else if (k === ' ' || k === 'Enter') {
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') {
+      if (state === 'playing') steer(-1); else if (state !== 'paused') turnGarage(-1);
+      e.preventDefault();
+    } else if (k === 'ArrowRight' || k === 'd' || k === 'D') {
+      if (state === 'playing') steer(1); else if (state !== 'paused') turnGarage(1);
+      e.preventDefault();
+    } else if (k === 'ArrowUp' || k === 'ArrowDown') {
+      e.preventDefault();
+    } else if (k === ' ' || k === 'Enter') {
       if (e.repeat) { e.preventDefault(); return; }
       if (state !== 'playing') {
         // Let a focused picker or icon button handle its own click.
@@ -609,8 +757,7 @@
         pressPlay();
       }
       e.preventDefault();
-    }
-    else if (k === 'p' || k === 'P' || k === 'Escape') {
+    } else if (k === 'p' || k === 'P' || k === 'Escape') {
       if (state === 'playing') pauseGame(); else if (state === 'paused') resumeGame();
     }
   });
@@ -650,19 +797,22 @@
   function spawnRow() {
     // The "safe lane" wanders by at most one lane per row, so there is
     // always a clear path that needs no more than one lane change.
-    safeLane = Math.max(0, Math.min(2, safeLane + pick([-1, 0, 1])));
+    safeLane = clamp(safeLane + pick([-1, 0, 1]), 0, 2);
     var others = [0, 1, 2].filter(function (l) { return l !== safeLane; });
     if (Math.random() < 0.5) others.reverse();
+    var lvl = cp + 1;
 
     var blocked = [];
     if (elapsed > 1.5) {
       blocked.push(others[0]);
-      if (elapsed > 15 && Math.random() < 0.35) blocked.push(others[1]);
+      // higher levels block two lanes more often
+      var p2 = lvl < 2 ? (elapsed > 15 ? 0.2 : 0) : Math.min(0.62, 0.2 + 0.07 * lvl);
+      if (Math.random() < p2) blocked.push(others[1]);
     }
 
     blocked.forEach(function (lane) {
       if (Math.random() < 0.3) {
-        entities.push({ type: 'cone', lane: lane, x: laneX(lane), y: -90, w: 44, h: 44 });
+        entities.push({ type: 'block', skin: ZONES[zoneAbove].block, lane: lane, x: laneX(lane), y: -90, w: 44, h: 44 });
       } else {
         var kind = pick(TRAFFIC_KINDS);
         entities.push({ type: 'veh', kind: kind, lane: lane, x: laneX(lane), y: -90,
@@ -679,7 +829,14 @@
       if (ptype === 'heart' && hearts >= maxHearts) ptype = 'nitro';
       if (ptype === 'shield' && shield) ptype = 'magnet';
       entities.push({ type: 'power', ptype: ptype, lane: lane, x: laneX(lane), y: -90, w: 44, h: 44 });
-    } else if (Math.random() < 0.8) {
+      return;
+    }
+    var r = Math.random();
+    if (lvl >= 3 && r < 0.09) {
+      entities.push({ type: 'pad', lane: lane, x: laneX(lane), y: -90, w: 60, h: 60 });      // speed pad
+    } else if (lvl >= 2 && r < 0.18) {
+      entities.push({ type: 'gem', lane: lane, x: laneX(lane), y: -90, w: 40, h: 40 });      // rare gem
+    } else if (r < 0.85) {
       var count = Math.random() < 0.25 ? 3 : 1; // sometimes a little trail of stars
       for (var i = 0; i < count; i++) {
         entities.push({ type: 'star', lane: lane, x: laneX(lane), y: -90 - i * 70, w: 40, h: 40 });
@@ -687,11 +844,25 @@
     }
   }
 
+  function sx(e) { return e.x + offAt(e.y); }   // where something on the road is on screen
+
   function burst(x, y, color, n) {
     for (var i = 0; i < n; i++) {
       var a = rand(0, Math.PI * 2), v = rand(60, 200);
-      particles.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(0.3, 0.6), max: 0.6, color: color, r: rand(3, 6) });
+      particles.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(0.3, 0.6), max: 0.6, color: color, r: rand(3, 6), g: 0 });
     }
+  }
+
+  function confetti(x, y, n) {
+    for (var i = 0; i < n; i++) {
+      var a = rand(-Math.PI, 0), v = rand(120, 420);
+      particles.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(0.9, 1.6), max: 1.6,
+        color: 'hsl(' + Math.floor(rand(0, 360)) + ',95%,62%)', r: rand(3, 6), g: 500, rect: true });
+    }
+  }
+
+  function popup(x, y, text) {
+    if (popups.length < 12) popups.push({ x: x, y: y, text: text, life: 0.8 });
   }
 
   function fling(e) {
@@ -702,9 +873,14 @@
     e.rot = e.rot || 0;
   }
 
+  function startNitro(seconds) {
+    if (seconds > nitro) { nitro = seconds; nitroFull = seconds; }
+    sndNitro();
+  }
+
   function applyPower(ptype) {
-    showBanner(POWER_INFO[ptype].label);
-    if (ptype === 'nitro') { nitro = nitroDur; sndNitro(); return; }
+    showBanner(POWER_INFO[ptype].label, false);
+    if (ptype === 'nitro') { startNitro(nitroDur); return; }
     sndPower();
     if (ptype === 'shield') shield = true;
     else if (ptype === 'magnet') magnet = magnetDur;
@@ -714,8 +890,13 @@
     }
   }
 
+  // Super cars get a present at the start of every level.
+  function grantLevelGifts() {
+    if (freeNitro) startNitro(2);
+    if (freeShield) shield = true;
+  }
+
   function scrollScenery(dy) {
-    roadOffset = (roadOffset + dy) % 80;
     var wrap = SCENERY_COUNT * SCENERY_GAP;
     for (var i = 0; i < scenery.length; i++) {
       var s = scenery[i];
@@ -733,8 +914,11 @@
     if (!transitioning && distance >= nextZoneAt) {
       transitioning = true;
       announced = false;
-      nextZoneAt += ZONE_LEN;
-      zoneAbove = (zoneBelow + 1) % ZONES.length;
+      cp++;
+      zoneStart = distance;
+      nextZoneAt = distance + zoneLenFor(cp);
+      seqPos = (seqPos + 1) % seq.length;
+      zoneAbove = seq[seqPos];
       boundaryY = -30;
       // Anything still waiting above the screen belongs to the new land.
       for (var i = 0; i < scenery.length; i++) {
@@ -746,10 +930,13 @@
       if (!announced && boundaryY >= player.y) {
         announced = true;
         zoneNow = zoneAbove;
-        zonesSeen++;
-        bonus += 50;
-        showBanner(ZONES[zoneNow].name);
+        level = cp + 1;
+        bonus += 40 + 10 * level;
+        showBanner('Level ' + level + ' · ' + ZONES[zoneNow].name, true);
+        confetti(player.x + offAt(player.y), player.y - 40, 26);
+        popup(player.x + offAt(player.y), player.y - 70, '+' + (40 + 10 * level));
         sndZone();
+        grantLevelGifts();
       }
       if (boundaryY > H + 40) {
         transitioning = false;
@@ -758,9 +945,64 @@
     }
   }
 
+  function zoneProgress() {
+    return clamp((distance - zoneStart) / Math.max(1, nextZoneAt - zoneStart), 0, 1);
+  }
+
+  function checkRecords() {
+    if (score <= best) return;
+    best = score;
+    if (!hsHit && bestAtStart > 0) {
+      hsHit = true;
+      fireworksAt = clock;
+      showBanner('🏆 New high score!', true);
+      confetti(W / 2, H * 0.45, 60);
+      sndHighScore();
+    }
+    var n = countUnlocked(best);
+    if (n > unlockCount) {
+      for (var i = unlockCount; i < n; i++) {
+        runUnlocked.push(UNLOCKS[i].name);
+        showBanner('🔓 ' + UNLOCKS[i].name + ' unlocked!', true);
+      }
+      unlockCount = n;
+      save('zzc_best', best);
+      confetti(W / 2, H * 0.45, 40);
+      sndUnlock();
+    }
+  }
+
+  function updateParticles(dt, dy) {
+    for (var j = particles.length - 1; j >= 0; j--) {
+      var p = particles[j];
+      p.life -= dt;
+      if (p.life <= 0) { particles.splice(j, 1); continue; }
+      p.vy += p.g * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt + dy * 0.5;
+    }
+    for (var k = popups.length - 1; k >= 0; k--) {
+      popups[k].life -= dt;
+      popups[k].y -= 50 * dt;
+      if (popups[k].life <= 0) popups.splice(k, 1);
+    }
+  }
+
+  function loseHeart(e, i) {
+    hearts--;
+    combo = 0;
+    invincible = 1.6;
+    shake = 0.3;
+    burst(sx(e), e.y, '#ffffff', 12);
+    sndBump();
+    buzz(60);
+    entities.splice(i, 1);
+  }
+
   function update(dt) {
     elapsed += dt;
-    var base = 280 + Math.min(280, elapsed * 5);
+    // Every level is faster than the last, and speed creeps up inside a level too.
+    var base = 300 + Math.min(420, 45 * (cp + zoneProgress()));
     speedMul += ((nitro > 0 ? 1.6 : 1) - speedMul) * Math.min(1, dt * 5);
     speed = base * speedMul;
     var dy = speed * dt;
@@ -771,20 +1013,22 @@
     rowTimer -= dy;
     if (rowTimer <= 0) {
       spawnRow();
-      rowTimer += 360 + (base - 280) * 0.6;
+      rowTimer += 360 + (base - 300) * 0.6;
     }
 
     player.x += (laneX(player.lane) - player.x) * Math.min(1, dt * 16);
+    updateCamera(dt);
     if (invincible > 0) invincible = Math.max(0, invincible - dt);
     if (shake > 0) shake = Math.max(0, shake - dt);
     if (magnet > 0) magnet = Math.max(0, magnet - dt);
     if (dbl > 0) dbl = Math.max(0, dbl - dt);
+    var psx = player.x + offAt(player.y);
     if (nitro > 0) {
       nitro = Math.max(0, nitro - dt);
       if (nitro === 0) invincible = Math.max(invincible, 1.2); // a moment to settle after the boost
       if (Math.random() < dt * 40) {
-        particles.push({ x: player.x + rand(-10, 10), y: player.y + player.h / 2 + 8, vx: rand(-30, 30), vy: rand(120, 260),
-          life: 0.35, max: 0.35, color: Math.random() < 0.5 ? '#ffd21f' : '#ff7a00', r: rand(3, 6) });
+        particles.push({ x: psx + rand(-10, 10), y: player.y + player.h / 2 + 8, vx: rand(-30, 30), vy: rand(120, 260),
+          life: 0.35, max: 0.35, color: Math.random() < 0.5 ? '#ffd21f' : '#ff7a00', r: rand(3, 6), g: 0 });
       }
     }
 
@@ -795,11 +1039,11 @@
       if (e.fling) {
         e.x += e.vx * dt;
         e.rot += e.spin * dt;
-        if (e.x < -90 || e.x > W + 90 || e.y > H + 110) entities.splice(i, 1);
+        if (e.x < -160 || e.x > W + 160 || e.y > H + 110) entities.splice(i, 1);
         continue;
       }
 
-      if (e.type === 'star' && magnet > 0 && e.y > player.y - 320 && e.y < player.y + 80) {
+      if ((e.type === 'star' || e.type === 'gem') && magnet > 0 && e.y > player.y - 320 && e.y < player.y + 80) {
         e.x += (player.x - e.x) * Math.min(1, dt * 7);
         e.y += (player.y - e.y) * Math.min(1, dt * 2.5);
       }
@@ -807,29 +1051,50 @@
       var hit = Math.abs(e.x - player.x) < (e.w + player.w) / 2 - 8 &&
                 Math.abs(e.y - player.y) < (e.h + player.h) / 2 - 8;
       if (hit) {
+        var ex = sx(e);
         if (e.type === 'star') {
-          bonus += dbl > 0 ? 20 : 10;
-          burst(e.x, e.y, '#ffd21f', 10);
+          combo++;
+          var pts = (10 + Math.min(combo - 1, 10)) * starMult * (dbl > 0 ? 2 : 1);
+          bonus += pts;
+          burst(ex, e.y, '#ffd21f', 10);
+          popup(ex, e.y - 20, combo > 0 && combo % 5 === 0 ? 'Combo ×' + combo + '!' : '+' + pts);
           sndStar();
           entities.splice(i, 1);
           continue;
         }
+        if (e.type === 'gem') {
+          bonus += 50;
+          burst(ex, e.y, '#7df9ff', 16);
+          popup(ex, e.y - 20, '+50');
+          sndGem();
+          entities.splice(i, 1);
+          continue;
+        }
+        if (e.type === 'pad') {
+          bonus += 10;
+          startNitro(1.2);
+          popup(ex, e.y - 20, 'Zoom!');
+          entities.splice(i, 1);
+          continue;
+        }
         if (e.type === 'power') {
-          burst(e.x, e.y, POWER_INFO[e.ptype].color, 14);
+          burst(ex, e.y, POWER_INFO[e.ptype].color, 14);
           applyPower(e.ptype);
           entities.splice(i, 1);
           continue;
         }
-        // Obstacles: traffic and cones
+        // Obstacles: traffic and things on the road
         if (nitro > 0) {
           fling(e);
           bonus += 5;
+          popup(ex, e.y - 20, '+5');
           sndWhoosh();
           continue;
         }
-        if (e.type === 'cone' && squash) {
-          burst(e.x, e.y, '#ff7a00', 12);
+        if (e.type === 'block' && squash) {
+          burst(ex, e.y, '#ff7a00', 12);
           bonus += 5;
+          popup(ex, e.y - 20, '+5');
           sndPop();
           entities.splice(i, 1);
           continue;
@@ -839,19 +1104,14 @@
             shield = false;
             invincible = 1;
             fling(e);
-            burst(player.x, player.y, '#8fdcff', 16);
+            burst(psx, player.y, '#8fdcff', 16);
             sndPop();
             continue;
           }
-          hearts--;
-          invincible = 1.6;
-          shake = 0.3;
-          burst(e.x, e.y, '#ffffff', 12);
-          sndBump();
-          buzz(60);
-          entities.splice(i, 1);
+          loseHeart(e, i);
           if (hearts <= 0) {
             score = bonus + Math.floor(distance / 60);
+            checkRecords();
             updateHud(false);
             endGame();
             return;
@@ -862,20 +1122,9 @@
       if (e.y > H + 110) entities.splice(i, 1);
     }
 
-    for (var j = particles.length - 1; j >= 0; j--) {
-      var p = particles[j];
-      p.life -= dt;
-      if (p.life <= 0) { particles.splice(j, 1); continue; }
-      p.x += p.vx * dt;
-      p.y += p.vy * dt + dy * 0.5;
-    }
-
-    for (var f = 0; f < flakes.length; f++) {
-      flakes[f].y += (flakes[f].v + dy / dt * 0.3) * dt;
-      if (flakes[f].y > H + 5) { flakes[f].y = -5; flakes[f].x = rand(0, W); }
-    }
-
+    updateParticles(dt, dy);
     score = bonus + Math.floor(distance / 60);
+    checkRecords();
     updateHud(false);
   }
 
@@ -908,6 +1157,16 @@
     rr(c, -w / 2 + 6, h / 2 - 9, 11, 5, 2); c.fill();
     rr(c, w / 2 - 17, h / 2 - 9, 11, 5, 2); c.fill();
   }
+  function starPath(c, outer, inner) {
+    c.beginPath();
+    for (var i = 0; i < 10; i++) {
+      var r = i % 2 === 0 ? outer : inner;
+      var a = -Math.PI / 2 + i * Math.PI / 5;
+      if (i === 0) c.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+      else c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    c.closePath();
+  }
   var GLASS = '#cfefff';
 
   // ---------- Vehicles (drawn around 0,0, nose pointing up) ----------
@@ -932,11 +1191,15 @@
 
     fillRR(c, 'rgba(0,0,0,0.2)', -w / 2 + 4, top + 6, w, h, 12);
 
-    if (kind === 'car' || kind === 'taxi') {
-      var col = kind === 'taxi' ? '#ffcc00' : color;
+    if (kind === 'car' || kind === 'taxi' || kind === 'gold') {
+      var col = kind === 'taxi' ? '#ffcc00' : (kind === 'gold' ? '#ffc107' : color);
       wheelPair(c, w / 2 - 1, top + 12, 10, 22);
       wheelPair(c, w / 2 - 1, bot - 34, 10, 22);
       fillRR(c, col, -w / 2, top, w, h, 13); outline(c);
+      if (kind === 'gold') {
+        fillRR(c, '#ffe57a', -w / 2 + 4, top + 4, 10, h - 8, 5);     // shine
+        fillRR(c, '#e53935', -4, top + 2, 8, h - 4, 2);              // champion stripe
+      }
       fillRR(c, GLASS, -w / 2 + 8, top + 20, w - 16, 18, 6);
       fillRR(c, GLASS, -w / 2 + 10, bot - 26, w - 20, 12, 5);
       fillRR(c, 'rgba(255,255,255,0.22)', -w / 2 + 10, top + 42, w - 20, 20, 6);
@@ -945,6 +1208,9 @@
         for (i = 0; i < 6; i++) c.fillRect(-w / 2 + 3 + i * 8, i % 2 ? 22 : 18, 8, 4);
         fillRR(c, '#ffffff', -9, top + 46, 18, 11, 3);
         fillRR(c, '#1f2937', -5, top + 50, 10, 3, 1);
+      }
+      if (kind === 'gold') {
+        c.save(); c.translate(0, top + 52); starPath(c, 9, 4); c.fillStyle = '#ffffff'; c.fill(); c.restore();
       }
       carLights(c, w, h, bright);
     } else if (kind === 'pickup') {
@@ -977,6 +1243,60 @@
       c.fillRect(-w / 2 + 14, top + 3, 9, 5); c.fillRect(w / 2 - 23, top + 3, 9, 5);
       c.fillStyle = '#ff5252';
       c.fillRect(-w / 2 + 14, bot - 7, 9, 4); c.fillRect(w / 2 - 23, bot - 7, 9, 4);
+    } else if (kind === 'superc') {
+      wheelPair(c, w / 2 - 2, top + 14, 11, 22);
+      wheelPair(c, w / 2 - 2, bot - 36, 12, 24);
+      c.fillStyle = color;                                         // sleek wedge body
+      c.beginPath();
+      c.moveTo(-13, top + 2); c.quadraticCurveTo(0, top - 5, 13, top + 2);
+      c.lineTo(w / 2 - 2, top + 28); c.lineTo(w / 2, bot - 14);
+      c.quadraticCurveTo(w / 2, bot, w / 2 - 10, bot); c.lineTo(-w / 2 + 10, bot);
+      c.quadraticCurveTo(-w / 2, bot, -w / 2, bot - 14); c.lineTo(-w / 2 + 2, top + 28);
+      c.closePath(); c.fill(); outline(c);
+      fillRR(c, '#ffd21f', -3, top + 3, 6, 24, 2);                 // lightning stripe
+      fillRR(c, '#1f2937', -16, top + 30, 32, 34, 11);             // dark canopy
+      fillRR(c, GLASS, -12, top + 33, 24, 10, 4);
+      c.fillStyle = 'rgba(0,0,0,0.3)';
+      c.fillRect(-11, bot - 27, 22, 3); c.fillRect(-11, bot - 21, 22, 3);
+      fillRR(c, '#1f2937', -w / 2 + 2, bot - 10, w - 4, 9, 3);     // spoiler
+      c.fillStyle = bright ? '#fff59d' : '#ffe0b2';
+      c.fillRect(-w / 2 + 9, top + 13, 9, 5); c.fillRect(w / 2 - 18, top + 13, 9, 5);
+    } else if (kind === 'rocket') {
+      wheelPair(c, w / 2 - 6, top + 34, 9, 18);
+      wheelPair(c, w / 2 - 6, bot - 40, 9, 18);
+      c.fillStyle = '#1f2937';                                     // fins
+      c.beginPath(); c.moveTo(-w / 2 + 6, bot - 36); c.lineTo(-w / 2 - 8, bot - 2); c.lineTo(-w / 2 + 8, bot - 8); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(w / 2 - 6, bot - 36); c.lineTo(w / 2 + 8, bot - 2); c.lineTo(w / 2 - 8, bot - 8); c.closePath(); c.fill();
+      disc(c, '#ffb300', -8, bot + 5, 5); disc(c, '#ffb300', 8, bot + 5, 5);   // thruster glow
+      disc(c, '#fff59d', -8, bot + 3, 2.5); disc(c, '#fff59d', 8, bot + 3, 2.5);
+      c.fillStyle = color;                                         // pointed body
+      c.beginPath();
+      c.moveTo(0, top);
+      c.quadraticCurveTo(w / 2 - 4, top + 18, w / 2 - 6, top + 42);
+      c.lineTo(w / 2 - 6, bot - 8); c.quadraticCurveTo(w / 2 - 6, bot, w / 2 - 14, bot);
+      c.lineTo(-w / 2 + 14, bot); c.quadraticCurveTo(-w / 2 + 6, bot, -w / 2 + 6, bot - 8);
+      c.lineTo(-w / 2 + 6, top + 42);
+      c.quadraticCurveTo(-w / 2 + 4, top + 18, 0, top);
+      c.closePath(); c.fill(); outline(c);
+      fillRR(c, '#ffffff', -w / 2 + 7, top + 48, w - 14, 7, 2);
+      fillRR(c, '#ffffff', -w / 2 + 7, bot - 22, w - 14, 5, 2);
+      disc(c, '#1f2937', 0, top + 30, 11);
+      disc(c, GLASS, 0, top + 30, 8);
+    } else if (kind === 'firetruck') {
+      wheelPair(c, w / 2 - 1, top + 10, 10, 20);
+      wheelPair(c, w / 2 - 1, top + 58, 10, 20);
+      wheelPair(c, w / 2 - 1, bot - 30, 10, 20);
+      fillRR(c, '#e53935', -w / 2, top, w, h, 9); outline(c);
+      fillRR(c, GLASS, -w / 2 + 8, top + 9, w - 16, 13, 4);
+      fillRR(c, '#29b6f6', -15, top + 26, 30, 7, 3);                // light bar
+      fillRR(c, '#ffffff', -4, top + 26, 8, 7, 1);
+      fillRR(c, '#b71c1c', -w / 2 + 7, top + 40, w - 14, h - 50, 4);
+      fillRR(c, '#ffd21f', -w / 2 + 1, top + 40, 4, h - 50, 2);     // side stripes
+      fillRR(c, '#ffd21f', w / 2 - 5, top + 40, 4, h - 50, 2);
+      c.fillStyle = '#eceff1';                                      // ladder
+      c.fillRect(-10, top + 44, 3, h - 58); c.fillRect(7, top + 44, 3, h - 58);
+      for (i = 0; i < 7; i++) c.fillRect(-10, top + 47 + i * 9, 20, 2);
+      carLights(c, w, h, bright);
     } else if (kind === 'van') {
       wheelPair(c, w / 2 - 1, top + 14, 10, 22);
       wheelPair(c, w / 2 - 1, bot - 36, 10, 22);
@@ -984,8 +1304,7 @@
       fillRR(c, GLASS, -w / 2 + 8, top + 14, w - 16, 16, 5);
       fillRR(c, '#ff8fc0', -w / 2 + 2, top + 36, 7, h - 46, 3);   // pink stripes
       fillRR(c, '#ff8fc0', w / 2 - 9, top + 36, 7, h - 46, 3);
-      // ice cream on the roof
-      c.fillStyle = '#e0a868';
+      c.fillStyle = '#e0a868';                                     // ice cream on the roof
       c.beginPath(); c.moveTo(-10, top + 58); c.lineTo(10, top + 58); c.lineTo(0, top + 88); c.closePath(); c.fill();
       disc(c, '#ff8fc0', 0, top + 54, 12);
       disc(c, '#ffffff', -4, top + 50, 3);
@@ -1021,42 +1340,105 @@
     }
   }
 
-  function drawCone(x, y) {
-    ctx.save();
-    ctx.translate(x, y);
-    fillRR(ctx, 'rgba(0,0,0,0.2)', -19, -17, 44, 44, 8);
-    fillRR(ctx, '#ff7a00', -22, -22, 44, 44, 8);
-    disc(ctx, '#ffffff', 0, 0, 15);
-    disc(ctx, '#ff7a00', 0, 0, 10);
-    disc(ctx, '#ffb066', 0, 0, 4);
-    ctx.restore();
-  }
-
-  function starPath(c, outer, inner) {
-    c.beginPath();
-    for (var i = 0; i < 10; i++) {
-      var r = i % 2 === 0 ? outer : inner;
-      var a = -Math.PI / 2 + i * Math.PI / 5;
-      if (i === 0) c.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-      else c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  // ---------- Things on the road ----------
+  // Each land has its own kind of obstacle. Drawn around 0,0.
+  function drawBlock(skin, seed) {
+    var i;
+    disc(ctx, 'rgba(0,0,0,0.2)', 3, 5, 20);
+    switch (skin) {
+      case 'cone':
+        fillRR(ctx, '#ff7a00', -22, -22, 44, 44, 8);
+        disc(ctx, '#ffffff', 0, 0, 15);
+        disc(ctx, '#ff7a00', 0, 0, 10);
+        disc(ctx, '#ffb066', 0, 0, 4);
+        break;
+      case 'tumble':
+        disc(ctx, '#c79a5b', 0, 0, 20);
+        ctx.strokeStyle = '#8a6532'; ctx.lineWidth = 2.5;
+        for (i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(Math.cos(i * 1.3) * 5, Math.sin(i * 1.3) * 5, 8 + i * 2.2, i, i + 3.6); ctx.stroke(); }
+        break;
+      case 'snowball':
+        disc(ctx, '#ffffff', 0, 0, 20);
+        ctx.lineWidth = 2.5; ctx.strokeStyle = '#9cc4e4'; ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0, 13, 0.4, 2); ctx.stroke();
+        disc(ctx, '#e6f3fb', -6, -6, 6);
+        break;
+      case 'ball':
+        var bc = ['#ff5a5a', '#ffffff', '#ffd21f', '#ffffff', '#29b6f6', '#ffffff'];
+        for (i = 0; i < 6; i++) {
+          ctx.fillStyle = bc[i];
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 20, i * Math.PI / 3, (i + 1) * Math.PI / 3); ctx.closePath(); ctx.fill();
+        }
+        disc(ctx, '#ffffff', 0, 0, 4);
+        break;
+      case 'barrier':
+        fillRR(ctx, '#ffffff', -24, -12, 48, 24, 5);
+        ctx.fillStyle = '#ff7a00';
+        for (i = 0; i < 4; i++) ctx.fillRect(-22 + i * 12, -10, 6, 20);
+        disc(ctx, '#ffe14d', -18, -16, 5); disc(ctx, '#ffe14d', 18, -16, 5);
+        break;
+      case 'asteroid':
+        ctx.fillStyle = '#9aa0b5';
+        ctx.beginPath();
+        for (i = 0; i < 9; i++) {
+          var ar = 17 + ((i * 7) % 5);
+          var aa = i * Math.PI * 2 / 9;
+          if (i === 0) ctx.moveTo(Math.cos(aa) * ar, Math.sin(aa) * ar); else ctx.lineTo(Math.cos(aa) * ar, Math.sin(aa) * ar);
+        }
+        ctx.closePath(); ctx.fill();
+        disc(ctx, '#7b8199', -6, -4, 5); disc(ctx, '#7b8199', 7, 5, 4); disc(ctx, '#7b8199', 3, -10, 2.5);
+        break;
+      case 'lavarock':
+        disc(ctx, 'rgba(255,110,20,0.35)', 0, 0, 25);
+        disc(ctx, '#2b2020', 0, 0, 19);
+        ctx.strokeStyle = '#ff7a1f'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-12, -6); ctx.lineTo(-3, 0); ctx.lineTo(-6, 10); ctx.moveTo(-3, 0); ctx.lineTo(9, -5); ctx.lineTo(12, 6); ctx.stroke();
+        break;
+      case 'donut':
+        ctx.lineWidth = 15; ctx.strokeStyle = '#e0a868';
+        ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 11; ctx.strokeStyle = '#ff7eb6';
+        ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.stroke();
+        var sc = ['#ffffff', '#ffd21f', '#29b6f6', '#7cdb6a'];
+        for (i = 0; i < 8; i++) { ctx.fillStyle = sc[i % 4]; ctx.fillRect(Math.cos(i * 0.8) * 13 - 2, Math.sin(i * 0.8) * 13 - 1, 5, 2.5); }
+        break;
     }
-    c.closePath();
   }
 
-  function drawStar(x, y, t) {
-    ctx.save();
-    ctx.translate(x, y);
+  function drawStar(t) {
     ctx.rotate(Math.sin(t * 3) * 0.25);
     var s = 1 + Math.sin(t * 6) * 0.08;
     ctx.scale(s, s);
     starPath(ctx, 20, 9);
-    ctx.fillStyle = dbl > 0 ? '#fff36b' : '#ffd21f';
+    ctx.fillStyle = (dbl > 0 || starMult > 1) ? '#fff36b' : '#ffd21f';
     ctx.fill();
     ctx.lineWidth = 3;
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#e09b00';
     ctx.stroke();
-    ctx.restore();
+  }
+
+  function drawGem(t) {
+    var s = 1 + Math.sin(t * 5) * 0.1;
+    ctx.scale(s, s);
+    disc(ctx, 'rgba(125,249,255,0.3)', 0, 0, 25);
+    ctx.fillStyle = '#29d3e8';
+    ctx.beginPath(); ctx.moveTo(0, -19); ctx.lineTo(16, -5); ctx.lineTo(0, 19); ctx.lineTo(-16, -5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#9af3ff';
+    ctx.beginPath(); ctx.moveTo(0, -19); ctx.lineTo(16, -5); ctx.lineTo(-16, -5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.moveTo(-8, -7); ctx.lineTo(0, -16); ctx.lineTo(0, -7); ctx.closePath(); ctx.fill();
+  }
+
+  function drawPad(t) {
+    fillRR(ctx, 'rgba(20,20,40,0.55)', -30, -30, 60, 60, 10);
+    ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (var i = 0; i < 3; i++) {
+      var ph = mod(t * 3 - i * 0.33, 1);
+      ctx.strokeStyle = 'rgba(255,225,60,' + (0.35 + 0.65 * ph) + ')';
+      var y = 16 - i * 14;
+      ctx.beginPath(); ctx.moveTo(-16, y + 8); ctx.lineTo(0, y - 6); ctx.lineTo(16, y + 8); ctx.stroke();
+    }
   }
 
   // Power-up badge, drawn around 0,0
@@ -1099,22 +1481,10 @@
     }
   }
 
-  function drawPower(e, t) {
-    ctx.save();
-    ctx.translate(e.x, e.y);
-    var s = 1 + Math.sin(t * 6 + e.lane) * 0.1;
-    disc(ctx, 'rgba(255,255,255,0.35)', 0, 0, 27 * s);
-    ctx.scale(s, s);
-    drawPowerIcon(e.ptype);
-    ctx.restore();
-  }
-
-  // ---------- Scenery ----------
-  function drawSceneItem(o) {
-    var x = o.x, y = o.y, s = o.s, i;
-    ctx.save();
-    ctx.translate(x, y);
-    switch (o.type) {
+  // ---------- Scenery (drawn around 0,0) ----------
+  function drawSceneItem(type, s) {
+    var i;
+    switch (type) {
       case 'tree':
         disc(ctx, 'rgba(0,0,0,0.15)', 3, 4, 16);
         disc(ctx, '#2e8b3d', 0, 0, 14 + s * 4);
@@ -1224,7 +1594,7 @@
         ctx.beginPath(); ctx.ellipse(0, 0, 19, 6, -0.4, 0, Math.PI * 2); ctx.stroke();
         break;
       case 'twinkle':
-        var tw = 0.5 + 0.5 * Math.sin(performance.now() / 300 + s * 20);
+        var tw = 0.5 + 0.5 * Math.sin(clock * 3.3 + s * 20);
         ctx.globalAlpha = 0.4 + tw * 0.6;
         ctx.fillStyle = '#ffffff';
         for (i = 0; i < 3; i++) {
@@ -1234,67 +1604,256 @@
           ctx.fill();
           ctx.restore();
         }
+        ctx.globalAlpha = 1;
+        break;
+      case 'volcano':
+        disc(ctx, '#5a3d33', 0, 0, 19);
+        disc(ctx, '#6f4a3c', 0, 0, 13);
+        disc(ctx, '#ff5a1f', 0, 0, 7 + Math.sin(clock * 4 + s * 9) * 1.2);
+        disc(ctx, '#ffd21f', 0, 0, 3.5);
+        break;
+      case 'lavapool':
+        ctx.fillStyle = '#ff5a1f';
+        ctx.beginPath(); ctx.ellipse(0, 0, 17, 11, s * 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffb300';
+        ctx.beginPath(); ctx.ellipse(-2, 0, 9, 5, s * 3, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'darkrock':
+        ctx.fillStyle = '#231818';
+        ctx.beginPath(); ctx.ellipse(0, 2, 14, 10, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#4a3636';
+        ctx.beginPath(); ctx.ellipse(-4, -1, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'lollipop':
+        fillRR(ctx, '#ffffff', -2, 4, 4, 20, 2);
+        disc(ctx, s < 0.5 ? '#ff5c8a' : '#7b61ff', 0, -2, 14);
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.arc(0, -2, 9, 0.5, 4.2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, -2, 4, 3.4, 7); ctx.stroke();
+        break;
+      case 'cupcake':
+        disc(ctx, '#e0a868', 0, 0, 15);
+        disc(ctx, s < 0.5 ? '#ffffff' : '#9af3ff', 0, 0, 11);
+        disc(ctx, '#ff7eb6', 0, 0, 7);
+        disc(ctx, '#e53935', 0, 0, 3.5);
+        break;
+      case 'cane':
+        for (i = 0; i < 6; i++) fillRR(ctx, i % 2 ? '#ffffff' : '#e53935', -4, -18 + i * 6, 8, 7, 2);
         break;
     }
-    ctx.restore();
   }
 
-  function drawGround(z, y0, y1) {
-    if (y1 <= y0) return;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, y0, W, y1 - y0);
-    ctx.clip();
-    ctx.fillStyle = z.left;
-    ctx.fillRect(0, y0, ROAD_X, y1 - y0);
-    ctx.fillStyle = z.right;
-    ctx.fillRect(ROAD_X + LANE_W * 3, y0, W - ROAD_X - LANE_W * 3, y1 - y0);
-    ctx.fillStyle = z.road;
-    ctx.fillRect(ROAD_X, y0, LANE_W * 3, y1 - y0);
-    // kerbs
-    ctx.fillStyle = z.kerbA;
-    ctx.fillRect(ROAD_X - 5, y0, 5, y1 - y0);
-    ctx.fillRect(ROAD_X + LANE_W * 3, y0, 5, y1 - y0);
-    var t = performance.now() / 1000;
-    var n = 0;
-    for (var ky = -80 + roadOffset; ky < H; ky += 80, n++) {
-      ctx.fillStyle = z.rainbow ? 'hsl(' + Math.floor((n * 55 + t * 90) % 360) + ',95%,62%)' : z.kerbB;
-      ctx.fillRect(ROAD_X - 5, ky, 5, 40);
-      ctx.fillRect(ROAD_X + LANE_W * 3, ky, 5, 40);
+  // ---------- The road ----------
+  function drawRoad() {
+    var n = Math.ceil((H + STRIP) / STRIP), i, sy, off, z, wy;
+    var zA = ZONES[zoneAbove], zB = ZONES[zoneBelow];
+    function zoneFor(y) { return (transitioning && y < boundaryY) ? zA : zB; }
+
+    // verges and tarmac
+    for (i = 0; i < n; i++) {
+      sy = i * STRIP;
+      off = offAt(sy + STRIP / 2);
+      stripOff[i] = off;
+      z = zoneFor(sy);
+      var l = ROAD_X + off, r = l + ROAD_W;
+      if (l > 0) { ctx.fillStyle = z.left; ctx.fillRect(0, sy, l + 1, STRIP + 1); }
+      if (r < W) { ctx.fillStyle = z.right; ctx.fillRect(r - 1, sy, W - r + 1, STRIP + 1); }
+      ctx.fillStyle = z.road;
+      ctx.fillRect(l, sy, ROAD_W, STRIP + 1);
     }
-    // lane dashes
-    ctx.fillStyle = z.dash;
-    for (var l = 1; l < 3; l++) {
-      var lx = ROAD_X + LANE_W * l - 3;
-      for (var y = -80 + roadOffset; y < H; y += 80) ctx.fillRect(lx, y, 6, 40);
+    // kerbs and lane dashes follow the road's own distance, so they scroll with it
+    for (i = 0; i < n; i++) {
+      sy = i * STRIP;
+      off = stripOff[i];
+      z = zoneFor(sy);
+      wy = worldY(sy);
+      var on = mod(wy, 80) < 40;
+      if (on) {
+        ctx.fillStyle = z.rainbow ? 'hsl(' + mod(Math.floor(wy / 80) * 55, 360) + ',95%,62%)' : z.kerbB;
+      } else {
+        ctx.fillStyle = z.kerbA;
+      }
+      ctx.fillRect(ROAD_X + off - 5, sy, 5, STRIP + 1);
+      ctx.fillRect(ROAD_X + ROAD_W + off, sy, 5, STRIP + 1);
+      if (on) {
+        ctx.fillStyle = z.dash;
+        ctx.fillRect(ROAD_X + LANE_W + off - 3, sy, 6, STRIP + 1);
+        ctx.fillRect(ROAD_X + LANE_W * 2 + off - 3, sy, 6, STRIP + 1);
+      }
     }
-    ctx.restore();
+    if (transitioning) {
+      var bo = offAt(boundaryY);
+      for (var row = 0; row < 2; row++) {
+        for (i = 0; i < 30; i++) {
+          ctx.fillStyle = (i + row) % 2 ? '#1f2937' : '#ffffff';
+          ctx.fillRect(ROAD_X + bo + i * 10, boundaryY - 10 + row * 10, 10, 10);
+        }
+      }
+    }
   }
 
-  function drawCheckpoint(y) {
-    for (var row = 0; row < 2; row++) {
-      for (var i = 0; i < 30; i++) {
-        ctx.fillStyle = (i + row) % 2 ? '#1f2937' : '#ffffff';
-        ctx.fillRect(ROAD_X + i * 10, y - 10 + row * 10, 10, 10);
+  // ---------- Weather ----------
+  // Stronger at higher levels, and it builds up and calms down inside each land.
+  function weatherStrength() {
+    var byLevel = Math.min(1, 0.3 + 0.12 * (level - 1));
+    return byLevel * (0.35 + 0.65 * Math.sin(Math.PI * zoneProgress()));
+  }
+
+  function weatherType() {
+    var z = ZONES[zoneNow];
+    // after a full trip round all the lands, the meadow gets rain showers
+    if (z.weather === 'petals' && cp >= seq.length) return 'rain';
+    return z.weather;
+  }
+
+  function drawWeather(type, I, t) {
+    var i, n, x, y, a, b, d;
+    if (type === 'rain') {
+      ctx.fillStyle = 'rgba(30,50,90,' + (0.16 * I) + ')';
+      ctx.fillRect(0, 0, W, H);
+      n = Math.floor(130 * I);
+      ctx.strokeStyle = 'rgba(205,228,255,0.6)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (i = 0; i < n; i++) {
+        a = RN[i]; b = RN[i + 150]; d = RN[i + 300];
+        x = mod(a * (W + 80) - t * 170, W + 80) - 20;
+        y = mod(b * (H + 40) + t * (760 + 420 * d), H + 40) - 20;
+        ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 16);
+      }
+      ctx.stroke();
+    } else if (type === 'snow') {
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.14 * I) + ')';
+      ctx.fillRect(0, 0, W, H);
+      n = Math.floor(140 * I) + 10;
+      var wind = 30 + 320 * I * I;      // turns into a blizzard when it is strong
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.beginPath();
+      for (i = 0; i < n; i++) {
+        a = RN[i]; b = RN[i + 150]; d = RN[i + 300];
+        x = mod(a * (W + 40) - t * wind * (0.6 + d) + Math.sin(t * 2 + i) * 8, W + 40) - 20;
+        y = mod(b * (H + 20) + t * (150 + 160 * d), H + 20) - 10;
+        ctx.moveTo(x + 3, y); ctx.arc(x, y, 1.5 + d * 2.2, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    } else if (type === 'sand') {
+      ctx.fillStyle = 'rgba(224,180,98,' + (0.32 * I) + ')';
+      ctx.fillRect(0, 0, W, H);
+      n = Math.floor(80 * I) + 4;
+      ctx.fillStyle = 'rgba(255,236,190,0.5)';
+      for (i = 0; i < n; i++) {
+        a = RN[i]; b = RN[i + 150]; d = RN[i + 300];
+        x = mod(a * (W + 240) + t * (520 + 620 * d), W + 240) - 120;
+        y = mod(b * H + t * 130 + Math.sin(t * 3 + i) * 10, H);
+        ctx.fillRect(x, y, 26 + 60 * d, 2);
+      }
+    } else if (type === 'petals') {
+      n = Math.floor(34 * I) + 6;
+      for (i = 0; i < n; i++) {
+        a = RN[i]; b = RN[i + 150]; d = RN[i + 300];
+        x = mod(a * W + Math.sin(t * 1.4 + i) * 24 + t * 20, W + 20) - 10;
+        y = mod(b * H + t * (70 + 60 * d), H + 20) - 10;
+        ctx.fillStyle = i % 3 ? '#ffc1dc' : '#ffffff';
+        ctx.beginPath(); ctx.ellipse(x, y, 4.5, 2.5, t * 2 + i, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (type === 'gulls') {
+      n = 3 + Math.floor(5 * I);
+      ctx.strokeStyle = 'rgba(40,60,80,0.4)'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (i = 0; i < n; i++) {
+        a = RN[i]; b = RN[i + 150]; d = RN[i + 300];
+        x = mod(a * (W + 80) + t * (50 + 60 * d), W + 80) - 40;
+        y = mod(b * (H + 60) + t * 35, H + 60) - 30;
+        var flap = Math.sin(t * 6 + i * 2) * 5;
+        ctx.beginPath(); ctx.moveTo(x - 12, y - flap); ctx.lineTo(x, y + 3); ctx.lineTo(x + 12, y - flap); ctx.stroke();
+      }
+      // sun sparkles drifting across
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.25 + 0.3 * I) + ')';
+      for (i = 0; i < 10; i++) {
+        a = RN[i + 40]; b = RN[i + 190];
+        if (Math.sin(t * 3 + i * 1.7) > 0.3) {
+          ctx.save(); ctx.translate(a * W, mod(b * H + t * 40, H)); starPath(ctx, 5, 1.5); ctx.fill(); ctx.restore();
+        }
+      }
+    } else if (type === 'meteors') {
+      n = 2 + Math.floor(7 * I);
+      ctx.lineCap = 'round';
+      for (i = 0; i < n; i++) {
+        a = RN[i]; b = RN[i + 150]; d = RN[i + 300];
+        var period = 2.2 + 2.5 * d;
+        var cyc = Math.floor(t / period + a);
+        var ph = mod(t / period + a, 1) / 0.4;
+        if (ph < 1) {
+          x = mod(b * W + cyc * 137, W + 100) - 100 + ph * 220;
+          y = -30 + ph * (H * 0.9);
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.85 * (1 - ph)) + ')';
+          ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 26, y - 70); ctx.stroke();
+          disc(ctx, 'rgba(255,240,170,' + (1 - ph) + ')', x, y, 4);
+        }
+      }
+    } else if (type === 'embers') {
+      ctx.fillStyle = 'rgba(255,70,0,' + (0.1 * I) + ')';
+      ctx.fillRect(0, 0, W, H);
+      n = Math.floor(70 * I) + 8;
+      for (i = 0; i < n; i++) {
+        a = RN[i]; b = RN[i + 150]; d = RN[i + 300];
+        x = mod(a * W + Math.sin(t * 2 + i) * 16, W);
+        y = H - mod(b * H + t * (50 + 110 * d), H + 10);
+        ctx.fillStyle = 'rgba(255,' + Math.floor(120 + 110 * d) + ',40,' + (0.5 + 0.5 * Math.sin(t * 8 + i)) + ')';
+        ctx.beginPath(); ctx.arc(x, y, 1.5 + d * 2, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (type === 'sprinkles') {
+      n = Math.floor(56 * I) + 10;
+      for (i = 0; i < n; i++) {
+        a = RN[i]; b = RN[i + 150]; d = RN[i + 300];
+        x = mod(a * W + Math.sin(t + i) * 12, W);
+        y = mod(b * H + t * (90 + 90 * d), H + 20) - 10;
+        ctx.save();
+        ctx.translate(x, y); ctx.rotate(t * 3 + i);
+        ctx.fillStyle = 'hsl(' + ((i * 47) % 360) + ',90%,65%)';
+        ctx.fillRect(-5, -1.5, 10, 3);
+        ctx.restore();
+      }
+    }
+  }
+
+  // Celebration fireworks for a new high score
+  function drawFireworks(t) {
+    var since = t - fireworksAt;
+    var loop = state === 'over' && score > bestAtStart && score > 0 && bestAtStart > 0;
+    if (!loop && (since < 0 || since > 4.5)) return;
+    for (var k = 0; k < 6; k++) {
+      var local = loop ? mod(t - k * 0.55, 3.3) : since - k * 0.55;
+      if (local < 0 || local > 1.3) continue;
+      var id = loop ? Math.floor((t - k * 0.55) / 3.3) * 6 + k : k;
+      var cx = 50 + RN[mod(id * 13 + 7, 480)] * (W - 100);
+      var cy = 110 + RN[mod(id * 29 + 3, 480)] * (H * 0.45);
+      var p = local / 1.3;
+      var rad = 85 * (1 - Math.pow(1 - p, 3));
+      var hue = Math.floor(RN[mod(id * 17 + 11, 480)] * 360);
+      ctx.fillStyle = 'hsla(' + hue + ',100%,68%,' + (1 - p) + ')';
+      for (var j = 0; j < 16; j++) {
+        var a = j * Math.PI / 8;
+        ctx.beginPath(); ctx.arc(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad + p * p * 25, 3.5 - p * 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + Math.cos(a + 0.2) * rad * 0.55, cy + Math.sin(a + 0.2) * rad * 0.55 + p * p * 25, 2.5 - p * 1.5, 0, Math.PI * 2); ctx.fill();
       }
     }
   }
 
   function drawTimers() {
     var list = [];
-    if (nitro > 0) list.push(['nitro', nitro / nitroDur]);
+    if (nitro > 0) list.push(['nitro', nitro / nitroFull]);
     if (magnet > 0) list.push(['magnet', magnet / magnetDur]);
     if (dbl > 0) list.push(['dbl', dbl / dblDur]);
     if (shield) list.push(['shield', 1]);
     for (var i = 0; i < list.length; i++) {
       ctx.save();
-      ctx.translate(26 + i * 44, 84);
+      ctx.translate(W - 26 - i * 44, 84);
       disc(ctx, 'rgba(0,0,0,0.3)', 0, 0, 19);
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 4;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(0, 0, 17, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.001, list[i][1]));
+      ctx.arc(0, 0, 17, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(list[i][1], 0.001, 1));
       ctx.stroke();
       ctx.scale(0.62, 0.62);
       drawPowerIcon(list[i][0]);
@@ -1304,63 +1863,66 @@
 
   function draw() {
     ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+    ctx.globalAlpha = 1;
     ctx.save();
     if (shake > 0 && state === 'playing') ctx.translate(rand(-4, 4), rand(-4, 4));
 
-    var t = performance.now() / 1000;
-    var i, e;
-
-    // ground: the old land below the checkpoint line, the new land above it
-    if (transitioning) {
-      drawGround(ZONES[zoneBelow], boundaryY, H + 10);
-      drawGround(ZONES[zoneAbove], -10, boundaryY);
-      drawCheckpoint(boundaryY);
-    } else {
-      drawGround(ZONES[zoneBelow], -10, H + 10);
-    }
+    var t = clock, i, e, s;
+    drawRoad();
 
     for (i = 0; i < scenery.length; i++) {
-      if (scenery[i].y > -40 && scenery[i].y < H + 40) drawSceneItem(scenery[i]);
+      s = scenery[i];
+      if (s.y < -40 || s.y > H + 40) continue;
+      var off = offAt(s.y);
+      var x = s.left ? ROAD_X - s.dist + off : ROAD_X + ROAD_W + s.dist + off;
+      if (x < -30 || x > W + 30) continue;
+      ctx.save();
+      ctx.translate(x, s.y);
+      drawSceneItem(s.type, s.s);
+      ctx.restore();
     }
 
     var showPlayer = state !== 'menu';
-    var dark = ZONES[zoneNow].dark;
-
-    // headlight beams at night
-    if (showPlayer && dark) {
-      var g = ctx.createLinearGradient(0, player.y - player.h / 2, 0, player.y - player.h / 2 - 150);
-      g.addColorStop(0, 'rgba(255,245,170,0.45)');
-      g.addColorStop(1, 'rgba(255,245,170,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(player.x - 20, player.y - player.h / 2 + 4);
-      ctx.lineTo(player.x + 20, player.y - player.h / 2 + 4);
-      ctx.lineTo(player.x + 48, player.y - player.h / 2 - 150);
-      ctx.lineTo(player.x - 48, player.y - player.h / 2 - 150);
-      ctx.closePath();
-      ctx.fill();
-    }
+    var psx = player.x + offAt(player.y);
 
     for (i = 0; i < entities.length; i++) {
       e = entities[i];
-      if (e.type === 'star') drawStar(e.x, e.y, t + e.lane);
-      else if (e.type === 'power') drawPower(e, t);
-      else if (e.type === 'cone') drawCone(e.x, e.y);
-      else {
-        ctx.save();
-        ctx.translate(e.x, e.y);
-        if (e.rot) ctx.rotate(e.rot);
-        drawVehicle(ctx, e.kind, e.color, false);
-        ctx.restore();
+      if (e.y < -150) continue;
+      ctx.save();
+      ctx.translate(sx(e), e.y);
+      if (e.type === 'star') drawStar(t + e.lane);
+      else if (e.type === 'gem') drawGem(t + e.lane);
+      else if (e.type === 'pad') { ctx.rotate(angleAt(e.y)); drawPad(t); }
+      else if (e.type === 'power') {
+        var ps = 1 + Math.sin(t * 6 + e.lane) * 0.1;
+        disc(ctx, 'rgba(255,255,255,0.35)', 0, 0, 27 * ps);
+        ctx.scale(ps, ps);
+        drawPowerIcon(e.ptype);
       }
+      else if (e.type === 'block') { if (e.rot) ctx.rotate(e.rot); drawBlock(e.skin, e.lane); }
+      else {
+        ctx.rotate(angleAt(e.y) + (e.rot || 0));
+        drawVehicle(ctx, e.kind, e.color, false);
+      }
+      ctx.restore();
     }
 
     if (showPlayer) {
       var blink = invincible > 0 && state === 'playing' && Math.floor(invincible * 10) % 2 === 1;
       if (!blink) {
         ctx.save();
-        ctx.translate(player.x, player.y);
-        ctx.rotate((laneX(player.lane) - player.x) * 0.004);
+        ctx.translate(psx, player.y);
+        ctx.rotate(angleAt(player.y) + (laneX(player.lane) - player.x) * 0.004);
+        if (ZONES[zoneNow].dark) {              // headlight beams
+          var g = ctx.createLinearGradient(0, -player.h / 2, 0, -player.h / 2 - 150);
+          g.addColorStop(0, 'rgba(255,245,170,0.45)');
+          g.addColorStop(1, 'rgba(255,245,170,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(-20, -player.h / 2 + 4); ctx.lineTo(20, -player.h / 2 + 4);
+          ctx.lineTo(48, -player.h / 2 - 150); ctx.lineTo(-48, -player.h / 2 - 150);
+          ctx.closePath(); ctx.fill();
+        }
         if (nitro > 0) {
           var fl = rand(26, 44);
           ctx.fillStyle = '#ff7a00';
@@ -1372,38 +1934,51 @@
         ctx.restore();
       }
       if (shield) {
-        var pr = 64 + Math.sin(t * 5) * 2;
-        disc(ctx, 'rgba(120,215,255,0.18)', player.x, player.y, pr);
+        var pr = Math.max(player.h / 2 + 16, 64) + Math.sin(t * 5) * 2;
+        disc(ctx, 'rgba(120,215,255,0.18)', psx, player.y, pr);
         ctx.lineWidth = 3;
         ctx.strokeStyle = 'rgba(160,230,255,0.9)';
         ctx.stroke();
       }
       if (magnet > 0) {
+        var mp = mod(t * 1.5, 1);
         ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgba(206,147,216,' + (0.5 - ((t * 1.5) % 1) * 0.5) + ')';
-        ctx.beginPath(); ctx.arc(player.x, player.y, 40 + ((t * 1.5) % 1) * 60, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = 'rgba(206,147,216,' + (0.5 - mp * 0.5) + ')';
+        ctx.beginPath(); ctx.arc(psx, player.y, 40 + mp * 60, 0, Math.PI * 2); ctx.stroke();
       }
     }
-
-    for (i = 0; i < particles.length; i++) {
-      var p = particles[i];
-      ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.max));
-      disc(ctx, p.color, p.x, p.y, p.r);
-    }
-    ctx.globalAlpha = 1;
 
     // speed lines during nitro
     if (nitro > 0 && state === 'playing') {
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      for (i = 0; i < 9; i++) ctx.fillRect(rand(ROAD_X, ROAD_X + LANE_W * 3), rand(0, H), 3, rand(40, 110));
+      for (i = 0; i < 9; i++) ctx.fillRect(rand(0, W), rand(0, H), 3, rand(40, 110));
     }
 
-    // snow in the snowy land
-    if (showPlayer && zoneNow === 2) {
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      for (i = 0; i < flakes.length; i++) {
-        ctx.beginPath(); ctx.arc(flakes[i].x, flakes[i].y, flakes[i].r, 0, Math.PI * 2); ctx.fill();
+    if (showPlayer) drawWeather(weatherType(), weatherStrength(), t);
+
+    for (i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      ctx.globalAlpha = clamp(p.life / p.max * 1.6, 0, 1);
+      if (p.rect) { ctx.fillStyle = p.color; ctx.fillRect(p.x - p.r, p.y - p.r / 2, p.r * 2, p.r); }
+      else disc(ctx, p.color, p.x, p.y, p.r);
+    }
+    ctx.globalAlpha = 1;
+
+    drawFireworks(t);
+
+    if (popups.length) {
+      ctx.font = 'bold 20px "Trebuchet MS", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      for (i = 0; i < popups.length; i++) {
+        ctx.globalAlpha = clamp(popups[i].life * 3, 0, 1);
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(31,41,55,0.85)';
+        ctx.strokeText(popups[i].text, popups[i].x, popups[i].y);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(popups[i].text, popups[i].x, popups[i].y);
       }
+      ctx.globalAlpha = 1;
     }
 
     ctx.restore();
@@ -1417,10 +1992,23 @@
     if (!(dt > 0)) dt = 0;
     if (dt > 0.05) dt = 0.05;
 
-    if (dt > 0) {
-      if (state === 'playing') update(dt);
-      else if (state === 'menu') scrollScenery(90 * dt);
+    if (dt > 0 && state !== 'paused') {
+      clock += dt;
+      if (state === 'playing') {
+        update(dt);
+      } else if (state === 'menu') {
+        distance += 90 * dt;
+        scrollScenery(90 * dt);
+        updateCamera(dt);
+      } else if (state === 'over') {
+        updateParticles(dt, 0);
+        if (score > bestAtStart && score > 0 && Math.random() < dt * 25) {   // confetti rain for a new best
+          particles.push({ x: rand(0, W), y: -10, vx: rand(-40, 40), vy: rand(60, 160), life: 2.6, max: 2.6,
+            color: 'hsl(' + Math.floor(rand(0, 360)) + ',95%,62%)', r: rand(3, 6), g: 120, rect: true });
+        }
+      }
     }
+    pumpBanners(now);
 
     draw();
     window.requestAnimationFrame(frame);
